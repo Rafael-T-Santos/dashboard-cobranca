@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  anexarLink,
+  LIMITE_ANEXO_MB,
+  anexarArquivo,
   cancelarChamada,
   finalizarChamada,
   iniciarChamada,
@@ -63,10 +64,11 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
   );
 
   const [anexos, setAnexos] = useState([]);
-  const [urlAnexo, setUrlAnexo] = useState("");
+  const [arquivo, setArquivo] = useState(null);
   const [descAnexo, setDescAnexo] = useState("");
   const [anexando, setAnexando] = useState(false);
   const [erroAnexo, setErroAnexo] = useState("");
+  const inputArquivoRef = useRef(null);
 
   const [restante, setRestante] = useState(null);
   const baseRef = useRef({ inicio: 0, duracao: 0 });
@@ -195,17 +197,23 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
 
   async function anexar() {
     setErroAnexo("");
+    // Barra o arquivo grande aqui, antes de gastar a subida inteira para o
+    // servidor recusar no fim.
+    if (arquivo.size > LIMITE_ANEXO_MB * 1024 * 1024) {
+      setErroAnexo(
+        `O arquivo tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB e o limite é ${LIMITE_ANEXO_MB} MB.`
+      );
+      return;
+    }
     setAnexando(true);
     try {
-      const r = await anexarLink(chamada.codChamada, {
-        url: urlAnexo.trim(),
-        descricao: descAnexo.trim(),
-      });
+      const r = await anexarArquivo(chamada.codChamada, arquivo, descAnexo.trim());
       setAnexos((a) => [...a, { codAnexo: r.codAnexo, url: r.url, descricao: r.descricao }]);
-      setUrlAnexo("");
+      setArquivo(null);
       setDescAnexo("");
+      if (inputArquivoRef.current) inputArquivoRef.current.value = "";
     } catch (e) {
-      setErroAnexo(e.message || "Não foi possível anexar o link.");
+      setErroAnexo(e.message || "Não foi possível enviar o arquivo.");
     } finally {
       setAnexando(false);
     }
@@ -337,14 +345,15 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
         <div className="modal-sec">
           <h4>Anexos</h4>
           <p className="hint">
-            Só o link do drive da empresa — o arquivo continua lá, nada é copiado para cá.
+            Escolha o arquivo no seu computador — ele vai para o Drive da empresa e o
+            link fica guardado na chamada. Até {LIMITE_ANEXO_MB} MB por arquivo.
           </p>
           {anexos.length > 0 && (
             <ul className="lista-anexos">
               {anexos.map((a) => (
                 <li key={a.codAnexo}>
                   <a href={a.url} target="_blank" rel="noreferrer">
-                    {a.descricao || a.url}
+                    📎 {a.descricao || a.url}
                   </a>
                 </li>
               ))}
@@ -353,10 +362,13 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
           <div className="form-linha">
             <div className="campo campo-largo">
               <input
-                type="url"
-                value={urlAnexo}
-                onChange={(e) => setUrlAnexo(e.target.value)}
-                placeholder="https://drive… (link do arquivo)"
+                type="file"
+                ref={inputArquivoRef}
+                onChange={(e) => {
+                  setArquivo(e.target.files?.[0] || null);
+                  setErroAnexo("");
+                }}
+                disabled={anexando}
               />
             </div>
             <div className="campo">
@@ -364,17 +376,23 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
                 value={descAnexo}
                 onChange={(e) => setDescAnexo(e.target.value)}
                 placeholder="Descrição (opcional)"
+                disabled={anexando}
               />
             </div>
             <button
               type="button"
               className="btn ghost"
               onClick={anexar}
-              disabled={anexando || !urlAnexo.trim()}
+              disabled={anexando || !arquivo}
             >
-              {anexando ? "Anexando…" : "Anexar"}
+              {anexando ? "Enviando…" : "Anexar"}
             </button>
           </div>
+          {arquivo && !anexando && (
+            <p className="hint">
+              {arquivo.name} · {(arquivo.size / 1024 / 1024).toFixed(1)} MB
+            </p>
+          )}
           {erroAnexo && <p className="aviso">{erroAnexo}</p>}
         </div>
 

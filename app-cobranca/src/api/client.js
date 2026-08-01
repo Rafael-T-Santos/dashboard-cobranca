@@ -79,6 +79,21 @@ export function apiPost(path, body) {
   return comCorpo("POST", path, body);
 }
 
+/**
+ * Envio de arquivo (multipart). Não define Content-Type de propósito: quem
+ * precisa escrever o cabeçalho é o navegador, que inclui nele o `boundary`
+ * gerado para o FormData. Definir na mão quebra o parse do lado do servidor.
+ */
+export async function apiUpload(path, formData) {
+  const enviou = !!token;
+  const res = await fetch(BASE + path, {
+    method: "POST",
+    headers: cabecalhos(),
+    body: formData,
+  });
+  return parse(res, enviou);
+}
+
 export function apiPut(path, body) {
   return comCorpo("PUT", path, body);
 }

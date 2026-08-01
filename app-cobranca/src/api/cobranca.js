@@ -1,6 +1,9 @@
 // Funções de acesso aos endpoints do módulo de Cobrança.
 // Cada função devolve diretamente o array/objeto útil (desembrulha `dados`).
-import { apiGet, apiPost, apiPut } from "./client";
+import { apiGet, apiPost, apiPut, apiUpload } from "./client";
+
+/** Teto do anexo, igual ao da API (drive.LIMITE_BYTES). */
+export const LIMITE_ANEXO_MB = 25;
 
 export function getCidades() {
   return apiGet("/api/cidades").then((r) => r.dados ?? []);
@@ -81,9 +84,20 @@ export function renovarChamada(codChamada) {
   return apiPut(`/api/cobranca/chamadas/${codChamada}/renovar`);
 }
 
-/** Anexa um link (drive da empresa) à chamada. */
+/** Anexa um link JÁ EXISTENTE à chamada (não sobe arquivo). */
 export function anexarLink(codChamada, { url, descricao }) {
   return apiPost(`/api/cobranca/chamadas/${codChamada}/anexos`, { url, descricao });
+}
+
+/**
+ * Sobe um arquivo do computador. Quem fala com o Google Drive é a API — o
+ * navegador só entrega o arquivo e recebe de volta o link já compartilhado.
+ */
+export function anexarArquivo(codChamada, arquivo, descricao) {
+  const dados = new FormData();
+  dados.append("arquivo", arquivo);
+  if (descricao) dados.append("descricao", descricao);
+  return apiUpload(`/api/cobranca/chamadas/${codChamada}/anexos/arquivo`, dados);
 }
 
 /** Histórico de chamadas do cliente (com itens e anexos). */
