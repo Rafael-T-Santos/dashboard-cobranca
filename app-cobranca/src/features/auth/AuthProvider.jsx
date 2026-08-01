@@ -23,7 +23,14 @@ function carregar() {
 
 // Fora do componente e antes do primeiro render: a sessão restaurada precisa
 // estar no cliente HTTP antes que qualquer efeito dispare uma requisição.
-const inicial = carregar();
+//
+// Sessão gravada ANTES de o token existir (versão anterior do app) não serve:
+// sem ele toda escrita toma 401, e como o aviso de "sessão expirada" só dispara
+// para quem MANDOU token, a pessoa ficaria presa numa tela que parece logada,
+// tomando erro em cada tentativa. Descartar aqui manda direto para o login.
+const salvo = carregar();
+const inicial = salvo && salvo.token ? salvo : null;
+if (salvo && !inicial) localStorage.removeItem(KEY);
 definirToken(inicial?.token);
 
 export function AuthProvider({ children }) {
