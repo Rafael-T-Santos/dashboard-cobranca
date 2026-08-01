@@ -1,0 +1,98 @@
+{
+   "generator-sankhya": {
+      "promptValues": {
+         "interceptorsDynaform": [{
+            "description": "Interceptor de metados (interceptFieldMetadata)",
+            "name": "interceptFieldMetadata",
+            "arguments": "fieldMetadata, dataset, dynaform",
+            "body": ""
+         }, {
+            "description": "Interceptor do dataset (interceptDataset)",
+            "name": "interceptDataset",
+            "arguments": "dynaform, dataset",
+            "body": ""
+         }, {
+            "description": "Interceptor do dynaform (interceptDynaform)",
+            "name": "interceptDynaform",
+            "arguments": "dynaform",
+            "body": ""
+         }, {
+            "description": "Campos a serem apresentados no dynaform (acceptField)",
+            "name": "acceptField",
+            "arguments": "fieldMD, dynaform, dataset",
+            "body": "return true;"
+         }],
+         "interceptorsDataset": [{
+            "description": "Salvamento de dados (dataSaved)",
+            "name": "dataSaved",
+            "arguments": "isNew, records",
+            "body": ""
+         }, {
+            "description": "Modo de inserção ativado (insertionModeActivated)",
+            "name": "insertionModeActivated",
+            "arguments": "",
+            "body": ""
+         }, {
+            "description": "Mudança de linha (currentLineChanged)",
+            "name": "currentLineChanged",
+            "arguments": "newIndex",
+            "body": ""
+         }, {
+            "description": "Atualização (refreshed)",
+            "name": "refreshed",
+            "arguments": "",
+            "body": ""
+         }, {
+            "description": "Fechamento (closed)",
+            "name": "closed",
+            "arguments": "",
+            "body": ""
+         }, {
+            "description": "Remoção de registro (recordRemoved)",
+            "name": "recordRemoved",
+            "arguments": "record",
+            "body": ""
+         }, {
+            "description": "Alteração de dados (dataModified)",
+            "name": "dataModified",
+            "arguments": "fieldName",
+            "body": ""
+         }, {
+            "description": "Cancelamento de edição (editionCanceled)",
+            "name": "editionCanceled",
+            "arguments": "",
+            "body": ""
+         }, {
+            "description": "Alteração de seleção (selectionChanged)",
+            "name": "selectionChanged",
+            "arguments": "",
+            "body": ""
+         }, {
+            "description": "Modo de edição ativado (editionModeActivated)",
+            "name": "editionModeActivated",
+            "arguments": "",
+            "body": ""
+         }, {
+            "description": "Cancelamento de salvamento do resgistro (saveAvoided)",
+            "name": "saveAvoided",
+            "arguments": "nullFieldNames",
+            "body": ""
+         }, {
+            "description": "Todos eventos do dataset (allEvents)",
+            "name": "allEvents",
+            "arguments": "event, parameters",
+            "body": ""
+         }, {
+            "description": "Envio de arquivo (uploadingFile)",
+            "name": "uploadingFile",
+            "arguments": "uploading",
+            "body": ""
+         }, {
+            "description": "Reset do dataset (cleared)",
+            "name": "cleared",
+            "arguments": "",
+            "body": ""
+         }]
+      }
+   }
+}

@@ -1,0 +1,273 @@
+<!--
+   ============================================================================
+   VISÃO 360° — versão AUTOCONTIDA para colar no COMPONENTE HTML5 do
+   "Construtor de Componentes de BI" do Sankhya Om.
+
+   - Tudo em UM bloco (style + markup + script). Cole isto no campo de HTML do gadget.
+   - CSS 100% escopado em .cobranca — não conflita com o CSS do Sankhya.
+   - Dados estáticos (mock) — é o protótipo de layout para validar com a gerência.
+     Depois dá pra alimentar via a query SQL do gadget ou migrar pro app snkCode.
+   ============================================================================
+-->
+<style>
+.cobranca {
+   --cb-surface: #FFFFFF; --cb-surface-2: #FAFBFC; --cb-border: #E5E8EE; --cb-border-strong: #D3D8E2;
+   --cb-ink: #1B2130; --cb-ink-2: #566074; --cb-ink-3: #8A93A6;
+   --cb-accent: #3D50C9; --cb-accent-2: #2E3EA8; --cb-accent-soft: #ECEFFB;
+   --cb-danger: #C0392B; --cb-danger-soft: #FBEAE8; --cb-warn: #9A6A0C; --cb-warn-soft: #FBF2DF; --cb-ok: #2E7D53;
+   --cb-shadow: 0 1px 2px rgba(20,28,46,.04), 0 2px 8px rgba(20,28,46,.05);
+   display: block; padding: 20px clamp(14px, 3vw, 28px); color: var(--cb-ink);
+   font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5;
+}
+.cobranca * { box-sizing: border-box; }
+.cobranca .cb-card { background: var(--cb-surface); border: 1px solid var(--cb-border); border-radius: 12px; box-shadow: var(--cb-shadow); }
+.cobranca .cb-identity { padding: 20px 22px; margin-bottom: 16px; }
+.cobranca .cb-id-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.cobranca .cb-avatar { width: 52px; height: 52px; border-radius: 12px; background: var(--cb-accent-soft); color: var(--cb-accent-2); display: grid; place-items: center; font-weight: 700; font-size: 20px; flex: none; }
+.cobranca .cb-id-main { min-width: 220px; flex: 1; }
+.cobranca .cb-id-name { font-size: 21px; font-weight: 680; letter-spacing: -.015em; margin: 0; line-height: 1.2; }
+.cobranca .cb-id-meta { color: var(--cb-ink-2); font-size: 13.5px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.cobranca .cb-id-meta b { color: var(--cb-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cobranca .cb-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 620; white-space: nowrap; }
+.cobranca .cb-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.cobranca .cb-status.atraso { background: var(--cb-danger-soft); color: var(--cb-danger); }
+.cobranca .cb-status.prejur { background: var(--cb-warn-soft); color: var(--cb-warn); }
+.cobranca .cb-status.negoc  { background: var(--cb-accent-soft); color: var(--cb-accent-2); }
+.cobranca .cb-contacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.cobranca .cb-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 8px; background: var(--cb-surface-2); border: 1px solid var(--cb-border); font-size: 13px; color: var(--cb-ink-2); }
+.cobranca .cb-chip b { color: var(--cb-ink); font-weight: 600; }
+.cobranca .cb-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+.cobranca .cb-kpi { background: var(--cb-surface-2); border: 1px solid var(--cb-border); border-radius: 10px; padding: 13px 14px; }
+.cobranca .cb-kpi-label { font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--cb-ink-3); text-transform: uppercase; }
+.cobranca .cb-kpi-value { font-size: 20px; font-weight: 680; letter-spacing: -.02em; margin-top: 5px; font-variant-numeric: tabular-nums; }
+.cobranca .cb-kpi-value.danger { color: var(--cb-danger); }
+.cobranca .cb-kpi-value small { font-size: 12px; font-weight: 500; color: var(--cb-ink-3); }
+.cobranca .cb-meter { height: 6px; border-radius: 999px; background: var(--cb-border-strong); margin-top: 9px; overflow: hidden; }
+.cobranca .cb-meter > span { display: block; height: 100%; border-radius: 999px; background: var(--cb-accent); }
+.cobranca .cb-meter > span.warn { background: var(--cb-warn); }
+.cobranca .cb-meter > span.danger { background: var(--cb-danger); }
+.cobranca .cb-kpi-note { font-size: 11.5px; color: var(--cb-ink-3); margin-top: 6px; }
+.cobranca .cb-sec-head { display: flex; align-items: center; gap: 12px; margin: 26px 2px 12px; flex-wrap: wrap; }
+.cobranca .cb-sec-title { font-size: 16px; font-weight: 660; letter-spacing: -.01em; margin: 0; }
+.cobranca .cb-spacer { flex: 1; }
+.cobranca .cb-filters { display: inline-flex; background: var(--cb-surface-2); border: 1px solid var(--cb-border); border-radius: 9px; padding: 3px; gap: 2px; }
+.cobranca .cb-filters button { border: 0; background: transparent; color: var(--cb-ink-2); font: inherit; font-size: 13px; font-weight: 560; padding: 6px 13px; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.cobranca .cb-filters button .cb-n { font-size: 11.5px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--cb-border); color: var(--cb-ink-2); font-variant-numeric: tabular-nums; }
+.cobranca .cb-filters button.sel { background: var(--cb-surface); color: var(--cb-ink); box-shadow: var(--cb-shadow); }
+.cobranca .cb-filters button.sel .cb-n { background: var(--cb-accent); color: #fff; }
+.cobranca .cb-table-card { overflow: hidden; }
+.cobranca .cb-table-scroll { overflow-x: auto; }
+.cobranca table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+.cobranca thead th { text-align: left; font-size: 11px; font-weight: 640; letter-spacing: .05em; text-transform: uppercase; color: var(--cb-ink-3); padding: 12px 16px; border-bottom: 1px solid var(--cb-border); background: var(--cb-surface-2); white-space: nowrap; }
+.cobranca th.num, .cobranca td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.cobranca tbody td { padding: 12px 16px; border-bottom: 1px solid var(--cb-border); white-space: nowrap; }
+.cobranca tbody tr:last-child td { border-bottom: 0; }
+.cobranca tbody tr:hover td { background: var(--cb-surface-2); }
+.cobranca .cb-titulo-id { font-weight: 620; color: var(--cb-ink); }
+.cobranca .cb-atraso { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 620; font-variant-numeric: tabular-nums; }
+.cobranca .cb-atraso.venc { background: var(--cb-danger-soft); color: var(--cb-danger); }
+.cobranca .cb-atraso.avencer { background: var(--cb-warn-soft); color: var(--cb-warn); }
+.cobranca .cb-val-atual { font-weight: 640; }
+.cobranca tfoot td { padding: 13px 16px; font-size: 13px; font-weight: 600; background: var(--cb-surface-2); border-top: 1px solid var(--cb-border-strong); font-variant-numeric: tabular-nums; }
+.cobranca tfoot .cb-lbl { color: var(--cb-ink-2); font-weight: 560; }
+.cobranca .cb-bottom { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; margin-top: 16px; }
+.cobranca .cb-panel { padding: 18px 20px; }
+.cobranca .cb-panel h3 { margin: 0; font-size: 14px; font-weight: 640; }
+.cobranca .cb-hint { color: var(--cb-ink-3); font-size: 12.5px; margin: 3px 0 0; }
+.cobranca .cb-regua { display: flex; align-items: flex-start; margin: 20px 0 6px; }
+.cobranca .cb-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
+.cobranca .cb-node { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 680; font-size: 15px; border: 2px solid var(--cb-border-strong); background: var(--cb-surface); color: var(--cb-ink-3); position: relative; z-index: 1; }
+.cobranca .cb-step.done .cb-node { background: var(--cb-ok); border-color: var(--cb-ok); color: #fff; }
+.cobranca .cb-step.current .cb-node { background: var(--cb-surface); border-color: var(--cb-accent); color: var(--cb-accent-2); box-shadow: 0 0 0 4px var(--cb-accent-soft); }
+.cobranca .cb-step-lbl { font-size: 12px; font-weight: 580; color: var(--cb-ink-2); text-align: center; }
+.cobranca .cb-step-lbl small { display: block; color: var(--cb-ink-3); font-weight: 500; font-size: 11px; }
+.cobranca .cb-connector { position: absolute; top: 20px; left: -50%; width: 100%; height: 2px; background: var(--cb-border-strong); z-index: 0; }
+.cobranca .cb-step.done .cb-connector { background: var(--cb-ok); }
+.cobranca .cb-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.cobranca .cb-btn { border: 1px solid var(--cb-border-strong); background: var(--cb-surface); color: var(--cb-ink); font: inherit; font-size: 13.5px; font-weight: 580; padding: 9px 15px; border-radius: 9px; cursor: pointer; }
+.cobranca .cb-btn:hover { border-color: var(--cb-ink-3); }
+.cobranca .cb-btn.primary { background: var(--cb-accent); border-color: var(--cb-accent); color: #fff; }
+.cobranca .cb-btn.primary:hover { background: var(--cb-accent-2); }
+.cobranca .cb-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cobranca .cb-dropzone { margin-top: 14px; border: 1.5px dashed var(--cb-border-strong); border-radius: 10px; padding: 22px; text-align: center; color: var(--cb-ink-3); background: var(--cb-surface-2); cursor: pointer; }
+.cobranca .cb-dropzone:hover { border-color: var(--cb-accent); background: var(--cb-accent-soft); color: var(--cb-accent-2); }
+.cobranca .cb-dropzone strong { display: block; color: var(--cb-ink-2); font-weight: 600; font-size: 13.5px; margin-bottom: 2px; }
+.cobranca .cb-dropzone span { font-size: 12px; }
+.cobranca .cb-files { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cobranca .cb-file { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border: 1px solid var(--cb-border); border-radius: 9px; background: var(--cb-surface-2); }
+.cobranca .cb-file-ic { width: 32px; height: 32px; border-radius: 7px; display: grid; place-items: center; flex: none; background: var(--cb-accent-soft); color: var(--cb-accent-2); font-size: 11px; font-weight: 700; }
+.cobranca .cb-fname { font-size: 13px; font-weight: 560; }
+.cobranca .cb-fmeta { font-size: 11.5px; color: var(--cb-ink-3); }
+@media (max-width: 720px) {
+   .cobranca .cb-kpis { grid-template-columns: repeat(2, 1fr); }
+   .cobranca .cb-bottom { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="cobranca">
+
+   <!-- PAINEL DE IDENTIFICAÇÃO -->
+   <section class="cb-card cb-identity">
+      <div class="cb-id-head">
+         <div class="cb-avatar">CS</div>
+         <div class="cb-id-main">
+            <h1 class="cb-id-name">Comercial Silva &amp; Andrade Ltda</h1>
+            <div class="cb-id-meta">
+               <span>CNPJ <b>12.345.678/0001-90</b></span>
+               <span>Cód. parceiro <b>4821</b></span>
+               <span>Representante <b>Marcos Vinícius</b></span>
+            </div>
+         </div>
+         <span class="cb-status atraso"><span class="cb-dot"></span> Em atraso</span>
+      </div>
+      <div class="cb-contacts">
+         <span class="cb-chip"><b>(11) 3555-1020</b></span>
+         <span class="cb-chip"><b>(11) 98877-4433</b></span>
+         <span class="cb-chip"><b>financeiro@silvaandrade.com.br</b></span>
+         <span class="cb-chip">São Paulo / SP</span>
+      </div>
+      <div class="cb-kpis">
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Limite de crédito</div>
+            <div class="cb-kpi-value">R$ 150.000<small>,00</small></div>
+            <div class="cb-meter"><span class="warn" style="width:78%"></span></div>
+            <div class="cb-kpi-note">R$ 117.000 utilizados · 78%</div>
+         </div>
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Pontualidade</div>
+            <div class="cb-kpi-value">62<small>%</small></div>
+            <div class="cb-meter"><span class="warn" style="width:62%"></span></div>
+            <div class="cb-kpi-note">Pagamentos em dia (12 meses)</div>
+         </div>
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Score de risco</div>
+            <div class="cb-kpi-value">41<small>/100</small></div>
+            <div class="cb-meter"><span class="danger" style="width:41%"></span></div>
+            <div class="cb-kpi-note">Risco elevado</div>
+         </div>
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Total em aberto</div>
+            <div class="cb-kpi-value danger">R$ 48.720<small>,00</small></div>
+            <div class="cb-kpi-note" style="margin-top:15px">4 títulos · 3 vencidos</div>
+         </div>
+      </div>
+   </section>
+
+   <!-- EXTRATO UNIFICADO DE DÉBITOS -->
+   <div class="cb-sec-head">
+      <h2 class="cb-sec-title">Extrato unificado de débitos</h2>
+      <div class="cb-spacer"></div>
+      <div class="cb-filters" id="cbFiltros">
+         <button data-filter="todos"    class="sel">Todos <span class="cb-n">4</span></button>
+         <button data-filter="vencidos">Vencidos <span class="cb-n">3</span></button>
+         <button data-filter="avencer">A vencer <span class="cb-n">1</span></button>
+      </div>
+   </div>
+
+   <section class="cb-card cb-table-card">
+      <div class="cb-table-scroll">
+         <table>
+            <thead>
+               <tr>
+                  <th>ID Título</th><th>Vencimento</th><th>Dias de atraso</th>
+                  <th class="num">Valor original</th><th class="num">Juros / Multa</th><th class="num">Valor atualizado</th>
+               </tr>
+            </thead>
+            <tbody id="cbTbody">
+               <tr data-tipo="vencidos">
+                  <td class="cb-titulo-id">#100482</td><td>15/04/2026</td>
+                  <td><span class="cb-atraso venc">80 dias</span></td>
+                  <td class="num">R$ 18.500,00</td><td class="num">R$ 1.924,00</td><td class="num cb-val-atual">R$ 20.424,00</td>
+               </tr>
+               <tr data-tipo="vencidos">
+                  <td class="cb-titulo-id">#100655</td><td>10/05/2026</td>
+                  <td><span class="cb-atraso venc">55 dias</span></td>
+                  <td class="num">R$ 12.300,00</td><td class="num">R$ 880,00</td><td class="num cb-val-atual">R$ 13.180,00</td>
+               </tr>
+               <tr data-tipo="vencidos">
+                  <td class="cb-titulo-id">#100901</td><td>20/06/2026</td>
+                  <td><span class="cb-atraso venc">14 dias</span></td>
+                  <td class="num">R$ 9.100,00</td><td class="num">R$ 166,00</td><td class="num cb-val-atual">R$ 9.266,00</td>
+               </tr>
+               <tr data-tipo="avencer">
+                  <td class="cb-titulo-id">#101120</td><td>18/07/2026</td>
+                  <td><span class="cb-atraso avencer">a vencer</span></td>
+                  <td class="num">R$ 5.850,00</td><td class="num">—</td><td class="num cb-val-atual">R$ 5.850,00</td>
+               </tr>
+            </tbody>
+            <tfoot>
+               <tr>
+                  <td class="cb-lbl" colspan="3" id="cbFootCount">4 título(s) exibido(s)</td>
+                  <td class="num" id="cbFootOrig">R$ 45.750,00</td>
+                  <td class="num" id="cbFootJuros">R$ 2.970,00</td>
+                  <td class="num" id="cbFootTotal">R$ 48.720,00</td>
+               </tr>
+            </tfoot>
+         </table>
+      </div>
+   </section>
+
+   <!-- RÉGUA + ANEXOS -->
+   <div class="cb-bottom">
+      <section class="cb-card cb-panel">
+         <h3>Régua de acionamento</h3>
+         <p class="cb-hint">Contador de interações — habilita o jurídico após a 3ª chamada sem acordo.</p>
+         <div class="cb-regua">
+            <div class="cb-step done"><div class="cb-node">&#10003;</div><div class="cb-step-lbl">Chamada 1<small>28/06 · Atendeu</small></div></div>
+            <div class="cb-step done"><div class="cb-connector"></div><div class="cb-node">&#10003;</div><div class="cb-step-lbl">Chamada 2<small>01/07 · Agendou retorno</small></div></div>
+            <div class="cb-step current"><div class="cb-connector"></div><div class="cb-node">3</div><div class="cb-step-lbl">Chamada 3<small>pendente</small></div></div>
+         </div>
+         <div class="cb-actions">
+            <button class="cb-btn primary">Registrar chamada</button>
+            <button class="cb-btn" disabled title="Disponível após a 3ª chamada sem acordo">Enviar para o jurídico</button>
+         </div>
+      </section>
+
+      <section class="cb-card cb-panel">
+         <h3>Anexos e documentos</h3>
+         <p class="cb-hint">Acordos, comprovantes de entrega, consultas e notificações.</p>
+         <div class="cb-dropzone">
+            <strong>Arraste arquivos ou clique para anexar</strong>
+            <span>PDF, JPG, PNG · até 20 MB</span>
+         </div>
+         <ul class="cb-files">
+            <li class="cb-file"><div class="cb-file-ic">PDF</div><div><div class="cb-fname">Acordo_parcelamento_v2.pdf</div><div class="cb-fmeta">240 KB · anexado em 01/07/2026</div></div></li>
+            <li class="cb-file"><div class="cb-file-ic">JPG</div><div><div class="cb-fname">Comprovante_entrega_NF8842.jpg</div><div class="cb-fmeta">1,1 MB · anexado em 22/06/2026</div></div></li>
+         </ul>
+      </section>
+   </div>
+
+</div>
+
+<script>
+(function () {
+   var root = document.currentScript ? document.currentScript.previousElementSibling : document;
+   var tbody = document.getElementById('cbTbody');
+   if (!tbody) return;
+   var rows = [].slice.call(tbody.querySelectorAll('tr'));
+   var btns = [].slice.call(document.querySelectorAll('#cbFiltros button'));
+   var foot = {
+      count: document.getElementById('cbFootCount'), orig: document.getElementById('cbFootOrig'),
+      juros: document.getElementById('cbFootJuros'), total: document.getElementById('cbFootTotal')
+   };
+   function brl(n) { return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+   function num(td) { var t = td.textContent.replace(/[^\d,]/g, '').replace(/\./g, '').replace(',', '.'); return t ? parseFloat(t) : 0; }
+   function apply(f) {
+      var o = 0, j = 0, t = 0, c = 0;
+      rows.forEach(function (r) {
+         var show = f === 'todos' || r.getAttribute('data-tipo') === f;
+         r.style.display = show ? '' : 'none';
+         if (show) { var ce = r.querySelectorAll('td'); o += num(ce[3]); j += num(ce[4]); t += num(ce[5]); c++; }
+      });
+      foot.count.textContent = c + ' título(s) exibido(s)';
+      foot.orig.textContent = brl(o); foot.juros.textContent = j ? brl(j) : '—'; foot.total.textContent = brl(t);
+   }
+   btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+         btns.forEach(function (x) { x.classList.remove('sel'); });
+         b.classList.add('sel');
+         apply(b.getAttribute('data-filter'));
+      });
+   });
+})();
+</script>

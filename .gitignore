@@ -1,0 +1,22 @@
+# Dependências e build do app React — regeneráveis a partir do package-lock.json
+node_modules/
+dist/
+dist-ssr/
+
+# Configuração de máquina. O .env daqui não tem segredo (só o IP da API interna),
+# mas fica de fora por precaução: no dia em que alguém colocar uma credencial,
+# ela não vai junto sem ninguém perceber. O modelo está em .env.example, e o
+# vite.config.js tem um valor padrão, então clonar e rodar funciona sem ele.
+*.local
+.env
+.env.*
+!.env.example
+
+# Permissões locais do Claude Code: cada máquina tem as suas
+.claude/settings.local.json
+
+# Ruído de sistema e editor
+.DS_Store
+Thumbs.db
+npm-debug.log*
+*.log

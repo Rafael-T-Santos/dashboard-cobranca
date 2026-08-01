@@ -1,0 +1,480 @@
+<title>Visão 360° do Cliente – Cobrança</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --bg: #F5F6F8;
+    --surface: #FFFFFF;
+    --surface-2: #FAFBFC;
+    --border: #E5E8EE;
+    --border-strong: #D3D8E2;
+    --ink: #1B2130;
+    --ink-2: #566074;
+    --ink-3: #8A93A6;
+    --accent: #3D50C9;
+    --accent-2: #2E3EA8;
+    --accent-soft: #ECEFFB;
+    --danger: #C0392B;
+    --danger-soft: #FBEAE8;
+    --warn: #9A6A0C;
+    --warn-soft: #FBF2DF;
+    --ok: #2E7D53;
+    --ok-soft: #E6F3EC;
+    --shadow: 0 1px 2px rgba(20,28,46,.04), 0 2px 8px rgba(20,28,46,.05);
+    --radius: 12px;
+    --ff: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F131A; --surface: #171C26; --surface-2: #1D2330;
+      --border: #29303E; --border-strong: #333B4B;
+      --ink: #E8EBF1; --ink-2: #A2ACBF; --ink-3: #6C7688;
+      --accent: #8394F7; --accent-2: #9AA8FF; --accent-soft: #1F2740;
+      --danger: #ED8078; --danger-soft: #2C1917;
+      --warn: #E0AC55; --warn-soft: #2A2314;
+      --ok: #63C08A; --ok-soft: #14261C;
+      --shadow: 0 1px 2px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F5F6F8; --surface: #FFFFFF; --surface-2: #FAFBFC;
+    --border: #E5E8EE; --border-strong: #D3D8E2;
+    --ink: #1B2130; --ink-2: #566074; --ink-3: #8A93A6;
+    --accent: #3D50C9; --accent-2: #2E3EA8; --accent-soft: #ECEFFB;
+    --danger: #C0392B; --danger-soft: #FBEAE8;
+    --warn: #9A6A0C; --warn-soft: #FBF2DF;
+    --ok: #2E7D53; --ok-soft: #E6F3EC;
+    --shadow: 0 1px 2px rgba(20,28,46,.04), 0 2px 8px rgba(20,28,46,.05);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F131A; --surface: #171C26; --surface-2: #1D2330;
+    --border: #29303E; --border-strong: #333B4B;
+    --ink: #E8EBF1; --ink-2: #A2ACBF; --ink-3: #6C7688;
+    --accent: #8394F7; --accent-2: #9AA8FF; --accent-soft: #1F2740;
+    --danger: #ED8078; --danger-soft: #2C1917;
+    --warn: #E0AC55; --warn-soft: #2A2314;
+    --ok: #63C08A; --ok-soft: #14261C;
+    --shadow: 0 1px 2px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.28);
+  }
+
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--ff);
+    font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 20px clamp(14px, 3vw, 28px) 56px; }
+
+  /* Topbar */
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 6px 2px 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent);
+    color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 15px; flex: none; }
+  .brand-name { font-weight: 650; letter-spacing: -.01em; }
+  .brand-sub { color: var(--ink-3); font-size: 12.5px; }
+  .topbar .spacer { flex: 1; }
+  .op { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+  .op-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft);
+    color: var(--accent-2); display: grid; place-items: center; font-weight: 650; font-size: 12px; }
+
+  .eyebrow { font-size: 11px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 10px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); }
+
+  /* Identity panel */
+  .identity { padding: 20px 22px; margin-bottom: 16px; }
+  .id-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .avatar { width: 52px; height: 52px; border-radius: 12px; background: var(--accent-soft);
+    color: var(--accent-2); display: grid; place-items: center; font-weight: 700; font-size: 20px; flex: none; }
+  .id-main { min-width: 220px; flex: 1; }
+  .id-name { font-size: 21px; font-weight: 680; letter-spacing: -.015em; margin: 0; line-height: 1.2;
+    text-wrap: balance; }
+  .id-meta { color: var(--ink-2); font-size: 13.5px; margin-top: 3px; display: flex; flex-wrap: wrap;
+    gap: 4px 14px; }
+  .id-meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 620; white-space: nowrap; }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .status.atraso { background: var(--danger-soft); color: var(--danger); }
+  .status.prejur { background: var(--warn-soft); color: var(--warn); }
+  .status.negoc { background: var(--accent-soft); color: var(--accent-2); }
+
+  .contacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 8px;
+    background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; color: var(--ink-2); }
+  .chip b { color: var(--ink); font-weight: 600; }
+  .chip svg { color: var(--ink-3); flex: none; }
+
+  /* KPI tiles */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+  .kpi { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; }
+  .kpi-label { font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--ink-3);
+    text-transform: uppercase; }
+  .kpi-value { font-size: 20px; font-weight: 680; letter-spacing: -.02em; margin-top: 5px;
+    font-variant-numeric: tabular-nums; }
+  .kpi-value small { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .meter { height: 6px; border-radius: 999px; background: var(--border-strong); margin-top: 9px; overflow: hidden; }
+  .meter > span { display: block; height: 100%; border-radius: 999px; }
+  .kpi-note { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
+
+  /* Section heading */
+  .sec-head { display: flex; align-items: center; gap: 12px; margin: 26px 2px 12px; flex-wrap: wrap; }
+  .sec-title { font-size: 16px; font-weight: 660; letter-spacing: -.01em; margin: 0; }
+  .sec-head .spacer { flex: 1; }
+
+  /* Filter tabs */
+  .filters { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 3px; gap: 2px; }
+  .filters button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px;
+    font-weight: 560; padding: 6px 13px; border-radius: 7px; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 7px; }
+  .filters button .n { font-size: 11.5px; font-weight: 650; padding: 1px 6px; border-radius: 999px;
+    background: var(--border); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .filters button[aria-selected="true"] { background: var(--surface); color: var(--ink);
+    box-shadow: var(--shadow); }
+  .filters button[aria-selected="true"] .n { background: var(--accent); color: #fff; }
+
+  /* Debt table */
+  .table-card { overflow: hidden; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+  thead th { text-align: left; font-size: 11px; font-weight: 640; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-3); padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+    white-space: nowrap; }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: var(--surface-2); }
+  .titulo-id { font-weight: 620; color: var(--ink); }
+  .atraso-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 620; font-variant-numeric: tabular-nums; }
+  .atraso-badge.venc { background: var(--danger-soft); color: var(--danger); }
+  .atraso-badge.avencer { background: var(--warn-soft); color: var(--warn); }
+  .atraso-badge.hoje { background: var(--accent-soft); color: var(--accent-2); }
+  .val-atual { font-weight: 640; }
+  tfoot td { padding: 13px 16px; font-size: 13px; font-weight: 600; background: var(--surface-2);
+    border-top: 1px solid var(--border-strong); font-variant-numeric: tabular-nums; }
+  tfoot .lbl { color: var(--ink-2); font-weight: 560; }
+
+  /* Bottom grid */
+  .bottom { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; margin-top: 16px; }
+  .panel { padding: 18px 20px; }
+  .panel h3 { margin: 0; font-size: 14px; font-weight: 640; }
+  .panel .hint { color: var(--ink-3); font-size: 12.5px; margin: 3px 0 0; }
+
+  /* Régua 3 chamadas */
+  .regua { display: flex; align-items: center; gap: 0; margin: 20px 0 6px; }
+  .step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
+  .step .node { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    font-weight: 680; font-size: 15px; border: 2px solid var(--border-strong); background: var(--surface);
+    color: var(--ink-3); z-index: 1; }
+  .step.done .node { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .step.current .node { background: var(--surface); border-color: var(--accent); color: var(--accent-2);
+    box-shadow: 0 0 0 4px var(--accent-soft); }
+  .step .lbl { font-size: 12px; font-weight: 580; color: var(--ink-2); text-align: center; }
+  .step .lbl small { display: block; color: var(--ink-3); font-weight: 500; font-size: 11px; }
+  .connector { position: absolute; top: 20px; left: -50%; width: 100%; height: 2px; background: var(--border-strong);
+    z-index: 0; }
+  .step.done .connector { background: var(--ok); }
+  .step:first-child .connector { display: none; }
+
+  .regua-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); font: inherit;
+    font-size: 13.5px; font-weight: 580; padding: 9px 15px; border-radius: 9px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; }
+  .btn:hover { border-color: var(--ink-3); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-2); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn svg { flex: none; }
+
+  /* Dropzone */
+  .dropzone { margin-top: 14px; border: 1.5px dashed var(--border-strong); border-radius: 10px;
+    padding: 22px; text-align: center; color: var(--ink-3); background: var(--surface-2); cursor: pointer;
+    transition: border-color .15s, background .15s; }
+  .dropzone:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-2); }
+  .dropzone strong { display: block; color: var(--ink-2); font-weight: 600; font-size: 13.5px; margin-bottom: 2px; }
+  .dropzone span { font-size: 12px; }
+  .files { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .file { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 9px; background: var(--surface-2); }
+  .file .ic { width: 32px; height: 32px; border-radius: 7px; display: grid; place-items: center; flex: none;
+    background: var(--accent-soft); color: var(--accent-2); font-size: 11px; font-weight: 700; }
+  .file .fname { font-size: 13px; font-weight: 560; }
+  .file .fmeta { font-size: 11.5px; color: var(--ink-3); }
+  .file .spacer { flex: 1; }
+
+  .demo-note { margin-top: 30px; padding: 12px 16px; border-radius: 10px; border: 1px dashed var(--border-strong);
+    background: var(--surface-2); color: var(--ink-3); font-size: 12.5px; display: flex; gap: 10px; align-items: flex-start; }
+  .demo-note b { color: var(--ink-2); font-weight: 620; }
+
+  @media (max-width: 720px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .bottom { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">C</div>
+      <div>
+        <div class="brand-name">Cobrança · Visão 360°</div>
+        <div class="brand-sub">Dashboard Operacional</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="op">
+      <span class="op-avatar">RS</span>
+      <span>Rafael Souza · Operador</span>
+    </div>
+  </div>
+
+  <!-- PAINEL DE IDENTIFICAÇÃO -->
+  <section class="card identity" aria-label="Identificação do cliente">
+    <div class="id-head">
+      <div class="avatar">CS</div>
+      <div class="id-main">
+        <h1 class="id-name">Comercial Silva &amp; Andrade Ltda</h1>
+        <div class="id-meta">
+          <span>CNPJ <b>12.345.678/0001-90</b></span>
+          <span>Cód. parceiro <b>4821</b></span>
+          <span>Representante <b>Marcos Vinícius</b></span>
+        </div>
+      </div>
+      <span class="status atraso" title="Status atual do cliente">
+        <span class="dot"></span> Em atraso
+      </span>
+    </div>
+
+    <div class="contacts">
+      <span class="chip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <b>(11) 3555-1020</b>
+      </span>
+      <span class="chip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        <b>(11) 98877-4433</b>
+      </span>
+      <span class="chip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+        <b>financeiro@silvaandrade.com.br</b>
+      </span>
+      <span class="chip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        São Paulo / SP
+      </span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Limite de crédito</div>
+        <div class="kpi-value">R$ 150.000<small>,00</small></div>
+        <div class="meter"><span style="width:78%; background: var(--warn)"></span></div>
+        <div class="kpi-note">R$ 117.000 utilizados · 78%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Pontualidade</div>
+        <div class="kpi-value">62<small>%</small></div>
+        <div class="meter"><span style="width:62%; background: var(--warn)"></span></div>
+        <div class="kpi-note">Pagamentos em dia (12 meses)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Score de risco</div>
+        <div class="kpi-value">41<small>/100</small></div>
+        <div class="meter"><span style="width:41%; background: var(--danger)"></span></div>
+        <div class="kpi-note">Risco elevado</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total em aberto</div>
+        <div class="kpi-value" style="color: var(--danger)">R$ 48.720<small>,00</small></div>
+        <div class="kpi-note" style="margin-top:15px">4 títulos · 3 vencidos</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXTRATO UNIFICADO DE DÉBITOS -->
+  <div class="sec-head">
+    <h2 class="sec-title">Extrato unificado de débitos</h2>
+    <div class="spacer"></div>
+    <div class="filters" role="tablist" aria-label="Filtrar títulos">
+      <button role="tab" aria-selected="true" data-filter="todos">Todos <span class="n">4</span></button>
+      <button role="tab" aria-selected="false" data-filter="vencidos">Vencidos <span class="n">3</span></button>
+      <button role="tab" aria-selected="false" data-filter="avencer">A vencer <span class="n">1</span></button>
+    </div>
+  </div>
+
+  <section class="card table-card" aria-label="Extrato de débitos">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ID Título</th>
+            <th>Vencimento</th>
+            <th>Dias de atraso</th>
+            <th class="num">Valor original</th>
+            <th class="num">Juros / Multa</th>
+            <th class="num">Valor atualizado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr data-tipo="vencidos">
+            <td class="titulo-id">#100482</td>
+            <td>15/04/2026</td>
+            <td><span class="atraso-badge venc">80 dias</span></td>
+            <td class="num">R$ 18.500,00</td>
+            <td class="num">R$ 1.924,00</td>
+            <td class="num val-atual">R$ 20.424,00</td>
+          </tr>
+          <tr data-tipo="vencidos">
+            <td class="titulo-id">#100655</td>
+            <td>10/05/2026</td>
+            <td><span class="atraso-badge venc">55 dias</span></td>
+            <td class="num">R$ 12.300,00</td>
+            <td class="num">R$ 880,00</td>
+            <td class="num val-atual">R$ 13.180,00</td>
+          </tr>
+          <tr data-tipo="vencidos">
+            <td class="titulo-id">#100901</td>
+            <td>20/06/2026</td>
+            <td><span class="atraso-badge venc">14 dias</span></td>
+            <td class="num">R$ 9.100,00</td>
+            <td class="num">R$ 166,00</td>
+            <td class="num val-atual">R$ 9.266,00</td>
+          </tr>
+          <tr data-tipo="avencer">
+            <td class="titulo-id">#101120</td>
+            <td>18/07/2026</td>
+            <td><span class="atraso-badge avencer">a vencer</span></td>
+            <td class="num">R$ 5.850,00</td>
+            <td class="num">—</td>
+            <td class="num val-atual">R$ 5.850,00</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="lbl" colspan="3"><span id="foot-count">4 títulos exibidos</span></td>
+            <td class="num" id="foot-orig">R$ 45.750,00</td>
+            <td class="num" id="foot-juros">R$ 2.970,00</td>
+            <td class="num" id="foot-total">R$ 48.720,00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- BOTTOM: RÉGUA + ANEXOS -->
+  <div class="bottom">
+    <section class="card panel" aria-label="Régua de acionamento">
+      <h3>Régua de acionamento</h3>
+      <p class="hint">Contador de interações — habilita o jurídico após a 3ª chamada sem acordo.</p>
+
+      <div class="regua">
+        <div class="step done">
+          <div class="node">✓</div>
+          <div class="lbl">Chamada 1<small>28/06 · Atendeu</small></div>
+        </div>
+        <div class="step done">
+          <div class="connector"></div>
+          <div class="node">✓</div>
+          <div class="lbl">Chamada 2<small>01/07 · Agendou retorno</small></div>
+        </div>
+        <div class="step current">
+          <div class="connector"></div>
+          <div class="node">3</div>
+          <div class="lbl">Chamada 3<small>pendente</small></div>
+        </div>
+      </div>
+
+      <div class="regua-actions">
+        <button class="btn primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Registrar chamada
+        </button>
+        <button class="btn" disabled title="Disponível após a 3ª chamada sem acordo">
+          Enviar para o jurídico
+        </button>
+      </div>
+    </section>
+
+    <section class="card panel" aria-label="Anexos e documentos">
+      <h3>Anexos e documentos</h3>
+      <p class="hint">Acordos, comprovantes de entrega, consultas e notificações.</p>
+
+      <div class="dropzone" id="dropzone" tabindex="0" role="button">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <strong>Arraste arquivos ou clique para anexar</strong>
+        <span>PDF, JPG, PNG · até 20 MB</span>
+      </div>
+
+      <ul class="files">
+        <li class="file">
+          <div class="ic">PDF</div>
+          <div>
+            <div class="fname">Acordo_parcelamento_v2.pdf</div>
+            <div class="fmeta">240 KB · anexado em 01/07/2026</div>
+          </div>
+          <div class="spacer"></div>
+        </li>
+        <li class="file">
+          <div class="ic">JPG</div>
+          <div>
+            <div class="fname">Comprovante_entrega_NF8842.jpg</div>
+            <div class="fmeta">1,1 MB · anexado em 22/06/2026</div>
+          </div>
+          <div class="spacer"></div>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="demo-note">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <div><b>Protótipo para validação.</b> Dados fictícios. Cliente, contatos, limite e títulos virão do Sankhya (Parceiro/Financeiro); juros/multa dependem da política financeira a confirmar. Objetivo: validar o layout da Visão 360° com a gerência.</div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var rows = Array.prototype.slice.call(document.querySelectorAll('#tbody tr'));
+    var btns = document.querySelectorAll('.filters button');
+    var foot = { count: document.getElementById('foot-count'), orig: document.getElementById('foot-orig'),
+      juros: document.getElementById('foot-juros'), total: document.getElementById('foot-total') };
+
+    function brl(n) {
+      return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function num(td) {
+      var t = td.textContent.replace(/[^\d,]/g, '').replace(/\./g, '').replace(',', '.');
+      return t ? parseFloat(t) : 0;
+    }
+    function apply(filter) {
+      var o = 0, j = 0, t = 0, c = 0;
+      rows.forEach(function (r) {
+        var show = filter === 'todos' || r.dataset.tipo === filter;
+        r.style.display = show ? '' : 'none';
+        if (show) {
+          var cells = r.querySelectorAll('td');
+          o += num(cells[3]); j += num(cells[4]); t += num(cells[5]); c++;
+        }
+      });
+      foot.count.textContent = c + (c === 1 ? ' título exibido' : ' títulos exibidos');
+      foot.orig.textContent = brl(o);
+      foot.juros.textContent = j ? brl(j) : '—';
+      foot.total.textContent = brl(t);
+    }
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+        b.setAttribute('aria-selected', 'true');
+        apply(b.dataset.filter);
+      });
+    });
+
+    var dz = document.getElementById('dropzone');
+    ['dragover', 'dragenter'].forEach(function (e) {
+      dz.addEventListener(e, function (ev) { ev.preventDefault(); dz.style.borderColor = 'var(--accent)'; });
+    });
+    ['dragleave', 'drop'].forEach(function (e) {
+      dz.addEventListener(e, function (ev) { ev.preventDefault(); dz.style.borderColor = ''; });
+    });
+  })();
+</script>

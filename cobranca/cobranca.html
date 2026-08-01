@@ -1,0 +1,144 @@
+<sk-application ng-controller="cobrancaController as ctrl" class="cobranca">
+
+   <!-- PAINEL DE IDENTIFICAÇÃO -->
+   <section class="cb-card cb-identity">
+      <div class="cb-id-head">
+         <div class="cb-avatar">CS</div>
+         <div class="cb-id-main">
+            <h1 class="cb-id-name">{{ ctrl.cliente.nome }}</h1>
+            <div class="cb-id-meta">
+               <span>CNPJ <b>{{ ctrl.cliente.cnpj }}</b></span>
+               <span>Cód. parceiro <b>{{ ctrl.cliente.codparc }}</b></span>
+               <span>Representante <b>{{ ctrl.cliente.representante }}</b></span>
+            </div>
+         </div>
+         <span class="cb-status" ng-class="ctrl.cliente.status.cls">
+            <span class="cb-dot"></span> {{ ctrl.cliente.status.label }}
+         </span>
+      </div>
+
+      <div class="cb-contacts">
+         <span class="cb-chip"><b>{{ ctrl.cliente.contatos.telefone }}</b></span>
+         <span class="cb-chip"><b>{{ ctrl.cliente.contatos.celular }}</b></span>
+         <span class="cb-chip"><b>{{ ctrl.cliente.contatos.email }}</b></span>
+         <span class="cb-chip">{{ ctrl.cliente.cidade }}</span>
+      </div>
+
+      <div class="cb-kpis">
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Limite de crédito</div>
+            <div class="cb-kpi-value">{{ ctrl.brl(ctrl.cliente.limite.total) }}</div>
+            <div class="cb-meter"><span ng-style="{width: ctrl.pctLimite() + '%'}" class="warn"></span></div>
+            <div class="cb-kpi-note">{{ ctrl.brl(ctrl.cliente.limite.usado) }} utilizados · {{ ctrl.pctLimite() }}%</div>
+         </div>
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Pontualidade</div>
+            <div class="cb-kpi-value">{{ ctrl.cliente.pontualidade }}%</div>
+            <div class="cb-meter"><span ng-style="{width: ctrl.cliente.pontualidade + '%'}" class="warn"></span></div>
+            <div class="cb-kpi-note">Pagamentos em dia (12 meses)</div>
+         </div>
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Score de risco</div>
+            <div class="cb-kpi-value">{{ ctrl.cliente.score }}/100</div>
+            <div class="cb-meter"><span ng-style="{width: ctrl.cliente.score + '%'}" class="danger"></span></div>
+            <div class="cb-kpi-note">Risco elevado</div>
+         </div>
+         <div class="cb-kpi">
+            <div class="cb-kpi-label">Total em aberto</div>
+            <div class="cb-kpi-value danger">{{ ctrl.brl(ctrl.totais.total) }}</div>
+            <div class="cb-kpi-note" style="margin-top:15px">{{ ctrl.contagem.todos }} títulos · {{ ctrl.contagem.vencidos }} vencidos</div>
+         </div>
+      </div>
+   </section>
+
+   <!-- EXTRATO UNIFICADO DE DÉBITOS -->
+   <div class="cb-sec-head">
+      <h2 class="cb-sec-title">Extrato unificado de débitos</h2>
+      <div class="cb-spacer"></div>
+      <div class="cb-filters">
+         <button ng-click="ctrl.setFiltro('todos')"    ng-class="{sel: ctrl.filtro === 'todos'}">Todos <span class="cb-n">{{ ctrl.contagem.todos }}</span></button>
+         <button ng-click="ctrl.setFiltro('vencidos')" ng-class="{sel: ctrl.filtro === 'vencidos'}">Vencidos <span class="cb-n">{{ ctrl.contagem.vencidos }}</span></button>
+         <button ng-click="ctrl.setFiltro('avencer')"  ng-class="{sel: ctrl.filtro === 'avencer'}">A vencer <span class="cb-n">{{ ctrl.contagem.avencer }}</span></button>
+      </div>
+   </div>
+
+   <section class="cb-card cb-table-card">
+      <div class="cb-table-scroll">
+         <table>
+            <thead>
+               <tr>
+                  <th>ID Título</th>
+                  <th>Vencimento</th>
+                  <th>Dias de atraso</th>
+                  <th class="num">Valor original</th>
+                  <th class="num">Juros / Multa</th>
+                  <th class="num">Valor atualizado</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr ng-repeat="t in ctrl.titulosFiltrados">
+                  <td class="cb-titulo-id">{{ t.id }}</td>
+                  <td>{{ t.venc }}</td>
+                  <td>
+                     <span class="cb-atraso venc"     ng-if="t.tipo === 'vencidos'">{{ t.dias }} dias</span>
+                     <span class="cb-atraso avencer"  ng-if="t.tipo === 'avencer'">a vencer</span>
+                  </td>
+                  <td class="num">{{ ctrl.brl(t.original) }}</td>
+                  <td class="num">{{ t.juros ? ctrl.brl(t.juros) : '—' }}</td>
+                  <td class="num cb-val-atual">{{ ctrl.brl(ctrl.atual(t)) }}</td>
+               </tr>
+            </tbody>
+            <tfoot>
+               <tr>
+                  <td class="cb-lbl" colspan="3">{{ ctrl.totais.count }} título(s) exibido(s)</td>
+                  <td class="num">{{ ctrl.brl(ctrl.totais.original) }}</td>
+                  <td class="num">{{ ctrl.totais.juros ? ctrl.brl(ctrl.totais.juros) : '—' }}</td>
+                  <td class="num">{{ ctrl.brl(ctrl.totais.total) }}</td>
+               </tr>
+            </tfoot>
+         </table>
+      </div>
+   </section>
+
+   <!-- RÉGUA + ANEXOS -->
+   <div class="cb-bottom">
+      <section class="cb-card cb-panel">
+         <h3>Régua de acionamento</h3>
+         <p class="cb-hint">Contador de interações — habilita o jurídico após a 3ª chamada sem acordo.</p>
+
+         <div class="cb-regua">
+            <div class="cb-step" ng-repeat="c in ctrl.chamadas" ng-class="c.cls">
+               <div class="cb-connector" ng-if="!$first"></div>
+               <div class="cb-node">{{ c.icon }}</div>
+               <div class="cb-step-lbl">Chamada {{ c.ordem }}<small>{{ c.data }}<span ng-if="c.status"> · {{ c.status }}</span></small></div>
+            </div>
+         </div>
+
+         <div class="cb-actions">
+            <button class="cb-btn primary" ng-click="ctrl.registrarChamada()">Registrar chamada</button>
+            <button class="cb-btn" disabled title="Disponível após a 3ª chamada sem acordo">Enviar para o jurídico</button>
+         </div>
+      </section>
+
+      <section class="cb-card cb-panel">
+         <h3>Anexos e documentos</h3>
+         <p class="cb-hint">Acordos, comprovantes de entrega, consultas e notificações.</p>
+
+         <div class="cb-dropzone">
+            <strong>Arraste arquivos ou clique para anexar</strong>
+            <span>PDF, JPG, PNG · até 20 MB</span>
+         </div>
+
+         <ul class="cb-files">
+            <li class="cb-file" ng-repeat="a in ctrl.anexos">
+               <div class="cb-file-ic">{{ a.tipo }}</div>
+               <div>
+                  <div class="cb-fname">{{ a.nome }}</div>
+                  <div class="cb-fmeta">{{ a.meta }}</div>
+               </div>
+            </li>
+         </ul>
+      </section>
+   </div>
+
+</sk-application>

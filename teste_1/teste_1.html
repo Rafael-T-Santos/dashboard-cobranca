@@ -1,0 +1,7 @@
+<sk-application ng-controller="teste_1Controller as ctrl" class="teste_1">
+    <sk-dynaform sk-entity-name="teste_financeiro"
+                 sk-custom-tabs-loader="ctrl.customTabsLoader(entityName)" 
+                 sk-dynaform-interceptor="ctrl"
+                 sk-on-dynaform-loaded="ctrl.onDynaformLoaded(dynaform, dataset)">
+    </sk-dynaform>
+</sk-application>
