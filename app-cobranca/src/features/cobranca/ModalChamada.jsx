@@ -6,7 +6,7 @@ import {
   iniciarChamada,
   renovarChamada,
 } from "../../api/cobranca";
-import { urlApi } from "../../api/client";
+import { tokenAtual, urlApi } from "../../api/client";
 import { fmtBRL, fmtData, valorTitulo } from "../../lib/format";
 
 const STATUS = [
@@ -89,7 +89,6 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
       codParc,
       nufins: titulos.map((t) => t.nuFin),
       sentido,
-      codUsu: operador.codUsu,
     })
       .then((r) => {
         idRef.current = r.codChamada;
@@ -127,7 +126,16 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
         // sendBeacon sobrevive ao fechamento da aba (fetch normal, não). A rota
         // de cancelar não lê o corpo, então um beacon vazio basta — e ela é
         // idempotente, então cancelar duas vezes não é erro.
-        navigator.sendBeacon?.(urlApi(`/api/cobranca/chamadas/${idRef.current}/cancelar`));
+        //
+        // O token vai na query porque sendBeacon NÃO manda cabeçalho; a rota
+        // aceita as duas formas justamente por causa deste caminho.
+        navigator.sendBeacon?.(
+          urlApi(
+            `/api/cobranca/chamadas/${idRef.current}/cancelar?token=${encodeURIComponent(
+              tokenAtual() || ""
+            )}`
+          )
+        );
       }
     };
     window.addEventListener("beforeunload", aoSair);
@@ -192,7 +200,6 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
       const r = await anexarLink(chamada.codChamada, {
         url: urlAnexo.trim(),
         descricao: descAnexo.trim(),
-        codUsu: operador.codUsu,
       });
       setAnexos((a) => [...a, { codAnexo: r.codAnexo, url: r.url, descricao: r.descricao }]);
       setUrlAnexo("");

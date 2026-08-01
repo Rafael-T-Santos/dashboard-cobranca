@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "./AuthProvider";
 
 export default function Login() {
-  const { entrar } = useAuth();
+  const { entrar, expirou } = useAuth();
   const [usuario, setUsuario] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState(null);
@@ -35,6 +35,12 @@ export default function Login() {
         </div>
 
         <p className="login-hint">Entre com seu usuário e senha do Sankhya.</p>
+
+        {expirou && (
+          <div className="aviso-stale">
+            Sua sessão expirou. Entre de novo para continuar.
+          </div>
+        )}
 
         <div className="campo">
           <label htmlFor="usuario">Usuário</label>

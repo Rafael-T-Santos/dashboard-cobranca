@@ -18,6 +18,9 @@ export const CATALOGO = [
   { k: "_valor", t: "Valor", num: true, fmt: fmtBRL, grupo: "Valores" },
   { k: "situacao", t: "Situação", sit: true, grupo: "Título" },
   { k: "telefone", t: "Telefone", grupo: "Cliente" },
+  // Preenchida no front cruzando com a régua (ver useReguaCarteira): quem está
+  // com o título em chamada agora e quantas chamadas ele já levou.
+  { k: "_cobranca", t: "Cobrança", grupo: "Cobrança" },
 
   // --- Extras: cliente ---
   { k: "razaoSocial", t: "Razão social", grupo: "Cliente" },
@@ -72,11 +75,23 @@ export const PADRAO = [
   "_valor",
   "situacao",
   "telefone",
+  "_cobranca",
 ];
 
-export const GRUPOS = ["Cliente", "Título", "Valores", "Cheque e banco", "Observações"];
+export const GRUPOS = [
+  "Cliente",
+  "Título",
+  "Cobrança",
+  "Valores",
+  "Cheque e banco",
+  "Observações",
+];
 
-const CHAVE_LS = "cobranca.titulosVencidos.colunas";
+// A versão no fim da chave descarta a escolha de colunas salva antes da coluna
+// "Cobrança" existir. Sem isso, quem já usava a tela nunca veria a coluna nova:
+// a lista do localStorage venceria o PADRAO e a novidade ficaria escondida atrás
+// do seletor de colunas.
+const CHAVE_LS = "cobranca.titulosVencidos.colunas.v2";
 
 export function carregarColunas() {
   try {

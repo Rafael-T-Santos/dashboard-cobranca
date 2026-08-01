@@ -11,6 +11,20 @@ import { useOpcoesFiltro } from "./OpcoesProvider.jsx";
 import { useTitulos } from "./TitulosProvider.jsx";
 import { CATALOGO, carregarColunas, salvarColunas } from "./colunas";
 import { casaParceiro, descParceiro, rotuloParceiro } from "./parceiro";
+import { ROTULO_DESFECHO, dataHora, rotuloOrdem } from "./rotulos";
+import { useReguaCarteira } from "./useRegua";
+
+// Rótulo da coluna "Cobrança". Vira um campo comum da linha (`_cobranca`), e é
+// por isso que o filtro, a contagem e a ordenação da coluna funcionam sem
+// nenhum tratamento especial — igual às colunas que vêm da API.
+//
+// Título em chamada AGORA aparece como "Em chamada" mesmo que já tenha régua:
+// entre "está sendo trabalhado neste instante" e "já levou 2 ligações", o
+// primeiro é o que muda a decisão de quem está olhando a lista.
+function rotuloCobranca(info) {
+  if (info.trava) return "Em chamada";
+  return info.ordem > 0 ? rotuloOrdem(info.ordem) : null;
+}
 
 export default function TitulosVencidos() {
   const { cidades, vendedores, parceiros, online } = useOpcoesFiltro();
@@ -18,7 +32,7 @@ export default function TitulosVencidos() {
   // Estado da consulta vem do provider: sobrevive à ida e volta da Visão 360°.
   const {
     filtros, setFiltros,
-    linhas, consultou, desatualizado, loading, erro, aviso,
+    linhas: linhasBrutas, consultou, desatualizado, loading, erro, aviso,
     sort, setSort,
     colFiltros, setColFiltros, aplicarColuna,
     consultar, limpar,
@@ -89,6 +103,20 @@ export default function TitulosVencidos() {
   }
 
   const temFiltroColuna = Object.keys(colFiltros).length > 0;
+
+  // Régua e travas da carteira inteira, para os badges da coluna "Cobrança".
+  const reguaPorTitulo = useReguaCarteira();
+
+  // Anexa a situação de cobrança à linha, em vez de consultar o mapa na hora de
+  // desenhar a célula: assim o filtro de coluna, a ordenação e a contagem de
+  // ocorrências enxergam `_cobranca` como qualquer outro campo.
+  const linhas = useMemo(() => {
+    if (reguaPorTitulo.size === 0) return linhasBrutas;
+    return linhasBrutas.map((r) => {
+      const info = reguaPorTitulo.get(r.nuFin);
+      return info ? { ...r, _cobranca: rotuloCobranca(info), _regua: info } : r;
+    });
+  }, [linhasBrutas, reguaPorTitulo]);
 
   // Linhas que sobrevivem a TODOS os filtros de coluna.
   const linhasFiltradas = useMemo(
@@ -425,6 +453,39 @@ export default function TitulosVencidos() {
 
 function Celula({ col, row }) {
   const val = valorDe(col, row);
+
+  // Situação de cobrança: quem está com o título agora e quantas chamadas ele
+  // já levou. Mostra os dois ao mesmo tempo quando for o caso — ao contrário do
+  // rótulo de filtro, que precisa escolher um só.
+  if (col.k === "_cobranca") {
+    const info = row._regua;
+    if (!info) return <td className="col-cobr"><span className="vazio">—</span></td>;
+    return (
+      <td className="col-cobr">
+        {info.trava && (
+          <span
+            className="badge trava"
+            title={`Em chamada desde ${String(info.trava.desde).slice(11, 16)}`}
+          >
+            🔒 {info.trava.nomeUsu || `usuário ${info.trava.codUsu}`}
+          </span>
+        )}
+        {info.ordem > 0 && (
+          <span
+            className={"badge regua" + (info.podeJuridico ? " juri" : "")}
+            title={
+              `Último contato em ${dataHora(info.dhUltima)}` +
+              (info.ultimoDesfecho
+                ? ` · ${ROTULO_DESFECHO[info.ultimoDesfecho] || info.ultimoDesfecho}`
+                : "")
+            }
+          >
+            {rotuloOrdem(info.ordem)}
+          </span>
+        )}
+      </td>
+    );
+  }
 
   // O nome do cliente leva direto para a Visão 360° dele.
   if (col.k === "nomeParc") {

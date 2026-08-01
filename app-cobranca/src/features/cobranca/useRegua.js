@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getChamadas, getLocks, getRegua } from "../../api/cobranca";
 
 // De quanto em quanto tempo reconsultamos as travas. Trava é o único dado da
@@ -6,12 +6,71 @@ import { getChamadas, getLocks, getRegua } from "../../api/cobranca";
 // checkbox daqui precisa desabilitar sozinho, sem F5.
 const INTERVALO_TRAVAS = 30_000;
 
+function indexar(regua, travas) {
+  const mapa = new Map();
+  for (const r of regua) {
+    mapa.set(r.nufin, {
+      ordem: r.ordemAtual,
+      ultimoDesfecho: r.ultimoDesfecho,
+      dhUltima: r.dhUltima,
+      podeJuridico: r.podeJuridico,
+    });
+  }
+  for (const t of travas) {
+    mapa.set(t.nufin, { ...(mapa.get(t.nufin) || {}), trava: t });
+  }
+  return mapa;
+}
+
 /**
- * Estado da régua de cobrança de um cliente: posição de cada título, travas
- * ativas e histórico de chamadas.
+ * Régua e travas da CARTEIRA INTEIRA — para a lista de títulos vencidos.
+ *
+ * Nenhuma das duas consultas cresce com o tamanho da carteira: a régua só traz
+ * títulos que já tiveram chamada, e trava ativa só existe enquanto um modal
+ * está aberto. Por isso dá para trazer tudo e cruzar por título em memória, em
+ * vez de mandar centenas de NUFIN na query string.
+ */
+export function useReguaCarteira() {
+  const [regua, setRegua] = useState([]);
+  const [travas, setTravas] = useState([]);
+  const ultimoRef = useRef("");
+
+  const recarregar = useCallback(
+    () =>
+      Promise.all([getRegua(), getLocks()])
+        .then(([r, t]) => {
+          // A tabela de títulos vencidos tem milhares de linhas e é memoizada.
+          // Trocar o estado a cada 30 s por um array novo — ainda que idêntico —
+          // invalidaria o memo e reconstruiria a tabela inteira sem necessidade.
+          // Comparar o JSON é barato perto disso: a régua é pequena.
+          const assinatura = JSON.stringify([r, t]);
+          if (assinatura === ultimoRef.current) return;
+          ultimoRef.current = assinatura;
+          setRegua(r);
+          setTravas(t);
+        })
+        .catch(() => {
+          // Silencioso de propósito: os badges são informação acessória. Uma
+          // falha aqui não pode esconder a lista de títulos, que é o essencial.
+        }),
+    []
+  );
+
+  useEffect(() => {
+    recarregar();
+    const id = setInterval(recarregar, INTERVALO_TRAVAS);
+    return () => clearInterval(id);
+  }, [recarregar]);
+
+  return useMemo(() => indexar(regua, travas), [regua, travas]);
+}
+
+/**
+ * Estado da régua de um cliente: posição de cada título, travas ativas e
+ * histórico de chamadas — o que a Visão 360° precisa.
  *
  * Todas as regras (o que conta na régua, o que está travado) vêm prontas da
- * API — aqui só juntamos as três respostas num índice por título.
+ * API; aqui só juntamos as três respostas num índice por título.
  */
 export function useRegua(codParc) {
   const [regua, setRegua] = useState([]);
@@ -57,21 +116,7 @@ export function useRegua(codParc) {
     return () => clearInterval(id);
   }, [codParc]);
 
-  const porTitulo = useMemo(() => {
-    const mapa = new Map();
-    for (const r of regua) {
-      mapa.set(r.nufin, {
-        ordem: r.ordemAtual,
-        ultimoDesfecho: r.ultimoDesfecho,
-        dhUltima: r.dhUltima,
-        podeJuridico: r.podeJuridico,
-      });
-    }
-    for (const t of travas) {
-      mapa.set(t.nufin, { ...(mapa.get(t.nufin) || {}), trava: t });
-    }
-    return mapa;
-  }, [regua, travas]);
+  const porTitulo = useMemo(() => indexar(regua, travas), [regua, travas]);
 
   return { porTitulo, chamadas, carregando, erro, recarregar };
 }

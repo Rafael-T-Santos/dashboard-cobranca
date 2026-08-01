@@ -49,10 +49,14 @@ export function getOperadores() {
 // --- Régua de chamadas -----------------------------------------------------
 // A API é dona das regras (trava, ordem da régua, gatilho jurídico). Aqui só
 // transportamos. Erros de 409 chegam como ApiError com `corpo.nufinsTravados`.
+//
+// Nenhuma função daqui manda `codUsu`: quem ligou sai do token da sessão, no
+// servidor. Mandar o código pelo corpo deixaria qualquer um assinar em nome de
+// outra pessoa.
 
 /**
  * Abre a chamada e TRAVA os títulos. Devolve { codChamada, dhInicio, dhExpira }.
- * @param {{codParc:number, nufins:number[], sentido:"PROATIVA"|"RECEPTIVA", codUsu:number}} dados
+ * @param {{codParc:number, nufins:number[], sentido:"PROATIVA"|"RECEPTIVA"}} dados
  */
 export function iniciarChamada(dados) {
   return apiPost("/api/cobranca/chamadas/iniciar", dados);
@@ -78,12 +82,8 @@ export function renovarChamada(codChamada) {
 }
 
 /** Anexa um link (drive da empresa) à chamada. */
-export function anexarLink(codChamada, { url, descricao, codUsu }) {
-  return apiPost(`/api/cobranca/chamadas/${codChamada}/anexos`, {
-    url,
-    descricao,
-    codUsu,
-  });
+export function anexarLink(codChamada, { url, descricao }) {
+  return apiPost(`/api/cobranca/chamadas/${codChamada}/anexos`, { url, descricao });
 }
 
 /** Histórico de chamadas do cliente (com itens e anexos). */
@@ -102,9 +102,12 @@ export function getLocks(nufins) {
   return apiGet(`/api/cobranca/locks${q}`).then((r) => r.dados ?? []);
 }
 
-/** Posição de cada título do cliente na régua (1ª/2ª/3ª chamada). */
+/**
+ * Posição de cada título na régua (1ª/2ª/3ª chamada).
+ * Sem `codParc`, devolve a carteira inteira — é assim que a lista de títulos
+ * vencidos monta os badges de todos os clientes numa consulta só.
+ */
 export function getRegua(codParc) {
-  return apiGet(`/api/cobranca/regua?codParc=${codParc}`).then(
-    (r) => r.dados ?? []
-  );
+  const q = codParc ? `?codParc=${codParc}` : "";
+  return apiGet(`/api/cobranca/regua${q}`).then((r) => r.dados ?? []);
 }
