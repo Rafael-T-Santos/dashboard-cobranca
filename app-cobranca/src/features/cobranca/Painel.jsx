@@ -107,172 +107,179 @@ export default function Painel() {
         </div>
       </header>
 
-      {erro && <p className="aviso">{erro}</p>}
+      {/* `.area` é quem rola: o `.content` do Layout é overflow:hidden, então sem
+          este invólucro a lista ficaria cortada e inalcançável quando crescer.
+          `.pagina` dá o respiro lateral que as outras telas já têm. */}
+      <main className="area">
+        <div className="pagina">
+          {erro && <p className="aviso">{erro}</p>}
 
-      {carregando ? (
-        <div className="estado">
-          <div className="spinner" /> Carregando o painel…
-        </div>
-      ) : clientes.length === 0 ? (
-        <div className="futuro">
-          Nenhuma cobrança registrada ainda. Assim que a primeira chamada for
-          finalizada na Visão 360°, o cliente aparece aqui.
-        </div>
-      ) : (
-        <>
-          <div className="kpis">
-            <div className="kpi">
-              <div className="kpi-label">Clientes em cobrança</div>
-              <div className="kpi-value">{fmtNum(kpis.clientes)}</div>
-              <div className="kpi-note">{fmtNum(kpis.chamadas)} chamada(s) registrada(s)</div>
+          {carregando ? (
+            <div className="estado">
+              <div className="spinner" /> Carregando o painel…
             </div>
-            <div className="kpi">
-              <div className="kpi-label">Em aberto nesses clientes</div>
-              <div className="kpi-value">{fmtBRL(kpis.valor)}</div>
-              <div className="kpi-note">só títulos já vencidos</div>
+          ) : clientes.length === 0 ? (
+            <div className="futuro">
+              Nenhuma cobrança registrada ainda. Assim que a primeira chamada for
+              finalizada na Visão 360°, o cliente aparece aqui.
             </div>
-            <div className="kpi">
-              <div className="kpi-label">Retorno atrasado</div>
-              <div className={"kpi-value" + (kpis.atrasados ? " danger" : " muted")}>
-                {fmtNum(kpis.atrasados)}
+          ) : (
+            <>
+              <div className="kpis">
+                <div className="kpi">
+                  <div className="kpi-label">Clientes em cobrança</div>
+                  <div className="kpi-value">{fmtNum(kpis.clientes)}</div>
+                  <div className="kpi-note">{fmtNum(kpis.chamadas)} chamada(s) registrada(s)</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-label">Em aberto nesses clientes</div>
+                  <div className="kpi-value">{fmtBRL(kpis.valor)}</div>
+                  <div className="kpi-note">só títulos já vencidos</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-label">Retorno atrasado</div>
+                  <div className={"kpi-value" + (kpis.atrasados ? " danger" : " muted")}>
+                    {fmtNum(kpis.atrasados)}
+                  </div>
+                  <div className="kpi-note">prometeram voltar e não voltaram</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-label">Retornos agendados</div>
+                  <div className="kpi-value">{fmtNum(kpis.agendados)}</div>
+                  <div className="kpi-note">com data marcada</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-label">Elegíveis ao jurídico</div>
+                  <div className={"kpi-value" + (kpis.juridico ? " danger" : " muted")}>
+                    {fmtNum(kpis.juridico)}
+                  </div>
+                  <div className="kpi-note">3ª chamada sem acordo</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-label">Com acordo</div>
+                  <div className="kpi-value">{fmtNum(kpis.acordo)}</div>
+                  <div className="kpi-note">último desfecho foi acordo</div>
+                </div>
               </div>
-              <div className="kpi-note">prometeram voltar e não voltaram</div>
-            </div>
-            <div className="kpi">
-              <div className="kpi-label">Retornos agendados</div>
-              <div className="kpi-value">{fmtNum(kpis.agendados)}</div>
-              <div className="kpi-note">com data marcada</div>
-            </div>
-            <div className="kpi">
-              <div className="kpi-label">Elegíveis ao jurídico</div>
-              <div className={"kpi-value" + (kpis.juridico ? " danger" : " muted")}>
-                {fmtNum(kpis.juridico)}
-              </div>
-              <div className="kpi-note">3ª chamada sem acordo</div>
-            </div>
-            <div className="kpi">
-              <div className="kpi-label">Com acordo</div>
-              <div className="kpi-value">{fmtNum(kpis.acordo)}</div>
-              <div className="kpi-note">último desfecho foi acordo</div>
-            </div>
-          </div>
 
-          <section className="card painel larga">
-            <div className="abas-linha">
-              <div className="abas">
-                {ABAS.map((a) => (
-                  <button
-                    key={a.k}
-                    className={"aba" + (aba === a.k ? " on" : "")}
-                    onClick={() => setAba(a.k)}
-                  >
-                    {a.t} <span className="n">{contaAba(a.k)}</span>
-                  </button>
-                ))}
-              </div>
-              <input
-                className="busca-painel"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Filtrar por nome ou código…"
-              />
-            </div>
-
-            {ordenados.length === 0 ? (
-              <div className="estado">Nenhum cliente nesta aba.</div>
-            ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Situação</th>
-                      <th>Estágio</th>
-                      <th className="num">Títulos</th>
-                      <th className="num">Em aberto</th>
-                      <th className="num">Maior atraso</th>
-                      <th>Último contato</th>
-                      <th>Próximo retorno</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ordenados.map((c) => (
-                      <tr key={c.codParc}>
-                        <td>
-                          <button
-                            type="button"
-                            className="link-tit"
-                            onClick={() => navegar(`/visao-360?codParc=${c.codParc}`)}
-                            title="Abrir a Visão 360° deste cliente"
-                          >
-                            {c.nomeParc}
-                          </button>
-                          <div className="hint">
-                            #{c.codParc}
-                            {c.cgcCpf ? ` · ${fmtDoc(c.cgcCpf)}` : ""}
-                          </div>
-                        </td>
-                        <td>
-                          <span className={"badge sit " + (COR_SITUACAO[c.situacao] || "")}>
-                            {ROTULO_SITUACAO[c.situacao] || c.situacao}
-                          </span>
-                          {c.emChamadaAgora && (
-                            <span className="badge trava" title="Alguém está com este cliente na linha agora">
-                              🔒 em chamada
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {c.estagio > 0 ? (
-                            <span className={"badge regua" + (c.podeJuridico ? " juri" : "")}>
-                              {rotuloOrdem(c.estagio)}
-                            </span>
-                          ) : (
-                            <span className="hint">só chamada receptiva</span>
-                          )}
-                          {/* O número único ordena e filtra; a quebra evita que
-                              ele minta, porque os títulos de um mesmo cliente
-                              podem estar em estágios diferentes. */}
-                          <div className="hint">{quebra(c)}</div>
-                        </td>
-                        <td className="num">{c.qtdTitulos}</td>
-                        <td className="num">{fmtBRL(c.valorTotal)}</td>
-                        <td className="num">
-                          {c.maiorAtrasoDias > 0 ? `${fmtNum(c.maiorAtrasoDias)} dias` : "—"}
-                        </td>
-                        <td>
-                          {c.ultimoContatoEm ? (
-                            <>
-                              {dataHora(c.ultimoContatoEm)}
-                              <div className="hint">{c.ultimoContatoPor || "—"}</div>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>
-                          {c.proximoRetornoEm ? (
-                            <>
-                              {dataHora(c.proximoRetornoEm)}
-                              <div className="hint">{c.proximoRetornoPor || "—"}</div>
-                            </>
-                          ) : c.retornoAtrasadoDe ? (
-                            <span className="atrasado">
-                              venceu {dataHora(c.retornoAtrasadoDe)}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                      </tr>
+              <section className="card painel painel-tab">
+                <div className="abas-linha">
+                  <div className="abas">
+                    {ABAS.map((a) => (
+                      <button
+                        key={a.k}
+                        className={"aba" + (aba === a.k ? " on" : "")}
+                        onClick={() => setAba(a.k)}
+                      >
+                        {a.t} <span className="n">{contaAba(a.k)}</span>
+                      </button>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </>
-      )}
+                  </div>
+                  <input
+                    className="busca-painel"
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Filtrar por nome ou código…"
+                  />
+                </div>
+
+                {ordenados.length === 0 ? (
+                  <div className="estado">Nenhum cliente nesta aba.</div>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Cliente</th>
+                          <th>Situação</th>
+                          <th>Estágio</th>
+                          <th className="num">Títulos</th>
+                          <th className="num">Em aberto</th>
+                          <th className="num">Maior atraso</th>
+                          <th>Último contato</th>
+                          <th>Próximo retorno</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ordenados.map((c) => (
+                          <tr key={c.codParc}>
+                            <td>
+                              <button
+                                type="button"
+                                className="link-tit"
+                                onClick={() => navegar(`/visao-360?codParc=${c.codParc}`)}
+                                title="Abrir a Visão 360° deste cliente"
+                              >
+                                {c.nomeParc}
+                              </button>
+                              <div className="hint">
+                                #{c.codParc}
+                                {c.cgcCpf ? ` · ${fmtDoc(c.cgcCpf)}` : ""}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={"badge sit " + (COR_SITUACAO[c.situacao] || "")}>
+                                {ROTULO_SITUACAO[c.situacao] || c.situacao}
+                              </span>
+                              {c.emChamadaAgora && (
+                                <span className="badge trava" title="Alguém está com este cliente na linha agora">
+                                  🔒 em chamada
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {c.estagio > 0 ? (
+                                <span className={"badge regua" + (c.podeJuridico ? " juri" : "")}>
+                                  {rotuloOrdem(c.estagio)}
+                                </span>
+                              ) : (
+                                <span className="hint">só chamada receptiva</span>
+                              )}
+                              {/* O número único ordena e filtra; a quebra evita que
+                                  ele minta, porque os títulos de um mesmo cliente
+                                  podem estar em estágios diferentes. */}
+                              <div className="hint">{quebra(c)}</div>
+                            </td>
+                            <td className="num">{c.qtdTitulos}</td>
+                            <td className="num">{fmtBRL(c.valorTotal)}</td>
+                            <td className="num">
+                              {c.maiorAtrasoDias > 0 ? `${fmtNum(c.maiorAtrasoDias)} dias` : "—"}
+                            </td>
+                            <td>
+                              {c.ultimoContatoEm ? (
+                                <>
+                                  {dataHora(c.ultimoContatoEm)}
+                                  <div className="hint">{c.ultimoContatoPor || "—"}</div>
+                                </>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              {c.proximoRetornoEm ? (
+                                <>
+                                  {dataHora(c.proximoRetornoEm)}
+                                  <div className="hint">{c.proximoRetornoPor || "—"}</div>
+                                </>
+                              ) : c.retornoAtrasadoDe ? (
+                                <span className="atrasado">
+                                  venceu {dataHora(c.retornoAtrasadoDe)}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+        </div>
+      </main>
     </>
   );
 }

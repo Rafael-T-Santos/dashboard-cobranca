@@ -1838,3 +1838,34 @@ li.tl-nova {
   color: var(--danger);
   font-weight: 600;
 }
+
+/* Respiro lateral do conteúdo — o mesmo que a .v360 já usava, agora com nome
+   genérico para qualquer tela que não seja a de tabela cheia. */
+.pagina {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* A tabela do painel é de LEITURA, não de digitação: poucas linhas, cada uma
+   com duas alturas de texto (nome + documento, estágio + quebra). A densidade
+   da tela de títulos, que existe para varrer milhares de linhas, aperta demais
+   aqui — daí o padding maior e o alinhamento ao topo. */
+.painel-tab table {
+  white-space: normal;
+}
+.painel-tab tbody td {
+  padding: 12px 14px;
+  vertical-align: top;
+}
+.painel-tab thead th {
+  padding: 10px 14px;
+}
+.painel-tab tbody td .hint {
+  margin-top: 3px;
+  line-height: 1.35;
+}
+.painel-tab .badge + .badge {
+  margin-left: 5px;
+}
