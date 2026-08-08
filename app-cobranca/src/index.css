@@ -1368,8 +1368,27 @@ td.col-sel {
   cursor: not-allowed;
   opacity: 0.4;
 }
+/* Cadeado no lugar da caixa de seleção. É botão, e não caixa desabilitada,
+   porque precisa poder receber o clique e explicar a reserva. */
+.cadeado {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  cursor: help;
+}
 tr.marcada > td {
   background: var(--accent-faint);
+}
+/* Título reservado: a linha inteira muda de fundo. Antes só havia um badge
+   discreto na coluna Cobrança, fácil de não ver — e a caixa desabilitada não
+   dava nenhum retorno a quem clicasse nela. */
+tr.travada > td {
+  background: var(--warn-bg);
+}
+tr.travada .tit-id {
+  opacity: 0.65;
 }
 td.col-cobr {
   white-space: nowrap;
@@ -1384,6 +1403,30 @@ td.col-cobr .badge + .badge {
 .badge.trava {
   background: var(--warn-bg);
   color: var(--warn);
+  border: 1px solid var(--warn);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+/* Explicação do cadeado, aberta ao clicar nele ou no badge. */
+.aviso-trava {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--warn);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+}
+.aviso-trava p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.aviso-trava .linha-botoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 .badge.regua {
   background: var(--accent-faint);

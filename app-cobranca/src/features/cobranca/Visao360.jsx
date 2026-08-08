@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getCliente, getExtrato } from "../../api/cobranca";
+import { cancelarChamada, getCliente, getExtrato } from "../../api/cobranca";
 import { fmtBRL, fmtData, fmtNum, valorTitulo } from "../../lib/format";
 import { fmtDoc } from "../../lib/text";
 import Combobox from "../../components/Combobox.jsx";
@@ -45,6 +45,8 @@ export default function Visao360() {
   const [modal, setModal] = useState(null); // { sentido, titulos }
   const [destaque, setDestaque] = useState(null); // nuFin realçado no extrato
   const [destaqueChamada, setDestaqueChamada] = useState(null); // chamada recém-gravada
+  const [avisoTrava, setAvisoTrava] = useState(null); // { nufin, trava } explicando o cadeado
+  const [liberando, setLiberando] = useState(false);
 
   const { porTitulo, chamadas, erro: erroRegua, recarregar } = useRegua(
     codParc ? Number(codParc) : null
@@ -402,6 +404,55 @@ export default function Visao360() {
                 )}
               </div>
 
+              {avisoTrava && (
+                <div className="aviso-trava">
+                  <b>
+                    🔒 Título #{porNufin.get(avisoTrava.nufin)?.numNota || avisoTrava.nufin}{" "}
+                    está reservado
+                  </b>
+                  <p>
+                    {avisoTrava.trava.nomeUsu || `Usuário ${avisoTrava.trava.codUsu}`} abriu
+                    uma chamada com este título às{" "}
+                    {String(avisoTrava.trava.desde).slice(11, 16)}. A reserva se solta
+                    sozinha às {String(avisoTrava.trava.expiraEm).slice(11, 16)}. Enquanto
+                    isso ele não entra em outra chamada — é o que evita dois operadores
+                    cobrarem o mesmo título ao mesmo tempo.
+                  </p>
+                  {/* Reserva do próprio operador quase sempre é sobra de uma tela de
+                      chamada fechada de mau jeito. Esperar 20 minutos por causa disso
+                      não faz sentido, e cancelar é idempotente. */}
+                  {avisoTrava.trava.codUsu === operador?.codUsu && (
+                    <p>
+                      <b>Esta reserva é sua</b> — provavelmente sobrou de uma tela de
+                      chamada que não chegou a ser salva. Você pode soltá-la agora.
+                    </p>
+                  )}
+                  <div className="linha-botoes">
+                    {avisoTrava.trava.codUsu === operador?.codUsu && (
+                      <button
+                        className="btn primary"
+                        disabled={liberando}
+                        onClick={async () => {
+                          setLiberando(true);
+                          try {
+                            await cancelarChamada(avisoTrava.trava.codChamada);
+                            setAvisoTrava(null);
+                            recarregar();
+                          } finally {
+                            setLiberando(false);
+                          }
+                        }}
+                      >
+                        {liberando ? "Liberando…" : "Liberar reserva"}
+                      </button>
+                    )}
+                    <button className="btn ghost" onClick={() => setAvisoTrava(null)}>
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {visiveis.length === 0 ? (
                 <div className="estado">Nenhum título nesta aba.</div>
               ) : (
@@ -438,22 +489,36 @@ export default function Visao360() {
                             id={`tit-${t.nuFin}`}
                             className={
                               (marcado ? "marcada" : "") +
-                              (destaque === t.nuFin ? " destaque" : "")
+                              (destaque === t.nuFin ? " destaque" : "") +
+                              (r.trava ? " travada" : "")
                             }
                           >
                             <td className="col-sel">
-                              <input
-                                type="checkbox"
-                                checked={marcado}
-                                disabled={!!r.trava}
-                                onChange={() => alternar(t.nuFin)}
-                                aria-label={`Selecionar título ${t.numNota || t.nuFin}`}
-                                title={
-                                  r.trava
-                                    ? `Em chamada com ${r.trava.nomeUsu || "outro operador"}`
-                                    : undefined
-                                }
-                              />
+                              {r.trava ? (
+                                // Caixa desabilitada não dispara clique nenhum: quem
+                                // clicava num título reservado não recebia resposta
+                                // alguma da tela. Vira botão para poder explicar.
+                                <button
+                                  type="button"
+                                  className="cadeado"
+                                  onClick={() =>
+                                    setAvisoTrava({ nufin: t.nuFin, trava: r.trava })
+                                  }
+                                  title="Título reservado — clique para saber por quem"
+                                  aria-label={`Título ${t.numNota || t.nuFin} reservado por ${
+                                    r.trava.nomeUsu || "outro operador"
+                                  }`}
+                                >
+                                  🔒
+                                </button>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={marcado}
+                                  onChange={() => alternar(t.nuFin)}
+                                  aria-label={`Selecionar título ${t.numNota || t.nuFin}`}
+                                />
+                              )}
                             </td>
                             <td className="tit-id">#{t.numNota || t.nuFin}</td>
                             <td>{t.tipoTitulo || "—"}</td>
@@ -467,12 +532,19 @@ export default function Visao360() {
                             </td>
                             <td className="col-cobr">
                               {r.trava && (
-                                <span
+                                <button
+                                  type="button"
                                   className="badge trava"
-                                  title={`Desde ${String(r.trava.desde).slice(11, 16)}`}
+                                  onClick={() =>
+                                    setAvisoTrava({ nufin: t.nuFin, trava: r.trava })
+                                  }
+                                  title="Clique para saber por que este título está reservado"
                                 >
-                                  🔒 {r.trava.nomeUsu || `usuário ${r.trava.codUsu}`}
-                                </span>
+                                  🔒 Em chamada com{" "}
+                                  {r.trava.codUsu === operador?.codUsu
+                                    ? "você"
+                                    : r.trava.nomeUsu || `usuário ${r.trava.codUsu}`}
+                                </button>
                               )}
                               {r.ordem > 0 && (
                                 <span
