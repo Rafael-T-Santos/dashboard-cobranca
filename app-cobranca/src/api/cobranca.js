@@ -125,3 +125,12 @@ export function getRegua(codParc) {
   const q = codParc ? `?codParc=${codParc}` : "";
   return apiGet(`/api/cobranca/regua${q}`).then((r) => r.dados ?? []);
 }
+
+/**
+ * Painel da gerência: uma linha por cliente JÁ TRABALHADO.
+ * Quem nunca recebeu chamada não vem aqui — para a dívida crua existe a tela
+ * de títulos. Cliente trabalhado que quitou continua vindo, com valor zero.
+ */
+export function getPainel() {
+  return apiGet("/api/cobranca/painel").then((r) => r.dados ?? []);
+}

@@ -21,6 +21,28 @@ export const ROTULO_SENTIDO = {
   RECEPTIVA: "receptiva",
 };
 
+// Situação do cliente no painel da gerência. É derivada na consulta, exclusiva,
+// e sai nesta ordem de precedência — ver docs/PAINEL-GERENTE.md §3.
+// "Elegível ao jurídico" NÃO está aqui de propósito: é sinalizador à parte,
+// porque um cliente pode estar agendado E na 3ª chamada ao mesmo tempo.
+export const ROTULO_SITUACAO = {
+  RETORNO_ATRASADO: "Retorno atrasado",
+  AGENDADO: "Retorno agendado",
+  ACORDO: "Acordo fechado",
+  EM_ANDAMENTO: "Em andamento",
+  SEM_DIVIDA: "Sem dívida vencida",
+};
+
+// Cor de cada situação. O vermelho é só do retorno atrasado: é o único estado
+// que significa que alguém prometeu voltar e não voltou.
+export const COR_SITUACAO = {
+  RETORNO_ATRASADO: "sit-vermelho",
+  AGENDADO: "sit-azul",
+  ACORDO: "sit-verde",
+  EM_ANDAMENTO: "sit-neutro",
+  SEM_DIVIDA: "sit-cinza",
+};
+
 const ORDINAL = ["", "1ª", "2ª", "3ª", "4ª", "5ª"];
 
 /** "1ª chamada", "2ª chamada"… — a posição do título na régua. */

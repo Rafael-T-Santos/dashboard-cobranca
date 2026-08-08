@@ -12,6 +12,7 @@
   --warn: #b45309;
   --warn-bg: #fef3e2;
   --ok: #0d7f5f;
+  --ok-bg: #e3f7ef;
   --sidebar: #141928;
   --sidebar-text: #b8c2de;
   --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
@@ -33,6 +34,7 @@
     --warn: #fbbf24;
     --warn-bg: #2a1e08;
     --ok: #34d399;
+    --ok-bg: #0c2a20;
     --sidebar: #0a0d17;
     --sidebar-text: #8b97bb;
   }
@@ -1777,4 +1779,62 @@ li.tl-nova {
     padding-left: 14px;
     padding-right: 14px;
   }
+}
+
+/* ===== Painel da gerência ===== */
+/* Linha das abas + busca. A busca é client-side: o painel inteiro cabe na
+   memória (uma linha por cliente trabalhado), então filtrar não vai ao banco. */
+.abas-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.busca-painel {
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  min-width: 220px;
+}
+.busca-painel:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-faint);
+}
+
+/* Situação do cliente. Só o retorno atrasado é vermelho: é o único estado que
+   significa que alguém prometeu voltar e não voltou. */
+.badge.sit {
+  font-weight: 700;
+}
+.sit-vermelho {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.sit-azul {
+  background: var(--accent-faint);
+  color: var(--accent);
+}
+.sit-verde {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.sit-neutro {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.sit-cinza {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+.atrasado {
+  color: var(--danger);
+  font-weight: 600;
 }

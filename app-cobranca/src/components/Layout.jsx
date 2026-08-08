@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthProvider.jsx";
 
 const NAV = [
+  { to: "/painel", label: "Painel de Cobrança", ready: true },
   { to: "/titulos-vencidos", label: "Títulos Vencidos", ready: true },
   { to: "/visao-360", label: "Visão 360°", ready: true },
   { to: "/regua", label: "Régua de Cobrança", ready: false },
