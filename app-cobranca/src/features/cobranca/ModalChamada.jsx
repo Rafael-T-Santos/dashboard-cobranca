@@ -180,12 +180,14 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
   );
 
   const desistir = useCallback(() => {
-    const preencheu = resumo.trim() || anexos.length > 0;
+    // Arquivo escolhido conta como trabalho em andamento, igual ao resumo
+    // digitado: sair fora perde a escolha.
+    const preencheu = resumo.trim() || anexos.length > 0 || arquivo;
     if (preencheu && !window.confirm("Descartar esta chamada? O que foi digitado será perdido.")) {
       return;
     }
     fechar(anexos.length > 0);
-  }, [resumo, anexos, fechar]);
+  }, [resumo, anexos, arquivo, fechar]);
 
   useEffect(() => {
     const aoTeclar = (e) => {
@@ -195,6 +197,7 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [desistir]);
 
+  /** Sobe o arquivo escolhido. Devolve true se foi. */
   async function anexar() {
     setErroAnexo("");
     // Barra o arquivo grande aqui, antes de gastar a subida inteira para o
@@ -203,7 +206,7 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
       setErroAnexo(
         `O arquivo tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB e o limite é ${LIMITE_ANEXO_MB} MB.`
       );
-      return;
+      return false;
     }
     setAnexando(true);
     try {
@@ -212,8 +215,10 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
       setArquivo(null);
       setDescAnexo("");
       if (inputArquivoRef.current) inputArquivoRef.current.value = "";
+      return true;
     } catch (e) {
       setErroAnexo(e.message || "Não foi possível enviar o arquivo.");
+      return false;
     } finally {
       setAnexando(false);
     }
@@ -225,6 +230,16 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
       setErro("Informe a data e a hora do retorno agendado.");
       return;
     }
+    // Arquivo escolhido no seletor mas ainda não enviado: sobe agora, antes de
+    // finalizar. Sem isto ele era DESCARTADO EM SILÊNCIO — quem escolhia o
+    // arquivo e clicava direto em "Salvar" saía convencido de que anexou, e a
+    // chamada era gravada com a lista de anexos vazia, sem erro nenhum na tela.
+    if (arquivo) {
+      const subiu = await anexar();
+      // O motivo já está escrito ao lado do seletor; parar aqui evita gravar a
+      // chamada e perder o arquivo junto.
+      if (!subiu) return;
+    }
     setFase("salvando");
     try {
       await finalizarChamada(chamada.codChamada, {
@@ -235,7 +250,9 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
       });
       finalizadaRef.current = true;
       idRef.current = null;
-      aoFechar(true);
+      // O número vai junto para a tela conseguir apontar a chamada recém-gravada
+      // no histórico — senão o modal fecha e nada visível acontece.
+      aoFechar(true, chamada.codChamada);
     } catch (e) {
       setErro(e.message || "Não foi possível salvar a chamada.");
       setFase("aberto");
@@ -390,7 +407,8 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
           </div>
           {arquivo && !anexando && (
             <p className="hint">
-              {arquivo.name} · {(arquivo.size / 1024 / 1024).toFixed(1)} MB
+              {arquivo.name} · {(arquivo.size / 1024 / 1024).toFixed(1)} MB —{" "}
+              <b>ainda não enviado</b>; sai junto quando você salvar a chamada.
             </p>
           )}
           {erroAnexo && <p className="aviso">{erroAnexo}</p>}

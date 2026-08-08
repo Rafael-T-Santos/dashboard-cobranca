@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fmtBRL, fmtData, valorTitulo } from "../../lib/format";
 import {
   ROTULO_DESFECHO,
@@ -17,10 +17,24 @@ import {
  * `porNufin` é o extrato indexado: serve para mostrar NOTA, VENCIMENTO e VALOR
  * no lugar do NUFIN cru, que não diz nada para quem cobra. Título ausente do
  * extrato é título que saiu do aberto — ou seja, foi pago desde a ligação.
+ *
+ * `destacar` é o número da chamada acabada de gravar: ela abre sozinha e pisca,
+ * servindo de confirmação de que o registro foi para o banco.
  */
-export default function HistoricoChamadas({ chamadas, porNufin, aoEscolherTitulo }) {
+export default function HistoricoChamadas({
+  chamadas,
+  porNufin,
+  aoEscolherTitulo,
+  destacar,
+}) {
   const [aberta, setAberta] = useState(null);
   const [verDescartadas, setVerDescartadas] = useState(false);
+
+  // Abre a chamada destacada. Não trava a linha aberta: assim que o destaque
+  // sai, o operador continua livre para abrir e fechar o que quiser.
+  useEffect(() => {
+    if (destacar) setAberta(destacar);
+  }, [destacar]);
 
   const descartadas = chamadas.filter((c) => c.situacao === "CANCELADA").length;
   const visiveis = verDescartadas
@@ -56,8 +70,18 @@ export default function HistoricoChamadas({ chamadas, porNufin, aoEscolherTitulo
           );
           const cancelada = c.situacao === "CANCELADA";
 
+          const nova = destacar === c.codChamada;
+
           return (
-            <li key={c.codChamada} className={cancelada ? "tl-cancelada" : undefined}>
+            <li
+              key={c.codChamada}
+              id={`chamada-${c.codChamada}`}
+              className={
+                [cancelada ? "tl-cancelada" : "", nova ? "tl-nova" : ""]
+                  .filter(Boolean)
+                  .join(" ") || undefined
+              }
+            >
               <button
                 type="button"
                 className="tl-cabeca"
@@ -84,6 +108,13 @@ export default function HistoricoChamadas({ chamadas, porNufin, aoEscolherTitulo
 
               {expandida && (
                 <div className="tl-corpo">
+                  {nova && (
+                    <p className="tl-ok">
+                      ✓ Registrada agora — é isto que ficou salvo. Se faltar algo,
+                      registre uma nova chamada; o que já foi gravado não se apaga.
+                    </p>
+                  )}
+
                   {cancelada && (
                     <p className="hint">
                       A tela da chamada chegou a ser aberta, mas foi fechada sem registro —

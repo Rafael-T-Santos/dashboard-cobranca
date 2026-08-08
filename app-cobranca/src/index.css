@@ -1553,6 +1553,33 @@ tr.destaque > td {
     background: var(--warn-bg);
   }
 }
+/* Chamada recém-gravada no histórico: confirmação de que o registro foi salvo. */
+li.tl-nova {
+  animation: piscaChamada 6s ease-out;
+  border-radius: 8px;
+}
+@keyframes piscaChamada {
+  0%,
+  60% {
+    background: var(--warn-bg);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.tl-ok {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  li.tl-nova {
+    animation: none;
+    background: var(--warn-bg);
+  }
+}
 .lista-anexos {
   list-style: none;
   margin-top: 8px;

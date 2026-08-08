@@ -44,6 +44,7 @@ export default function Visao360() {
   const [selecao, setSelecao] = useState([]);
   const [modal, setModal] = useState(null); // { sentido, titulos }
   const [destaque, setDestaque] = useState(null); // nuFin realçado no extrato
+  const [destaqueChamada, setDestaqueChamada] = useState(null); // chamada recém-gravada
 
   const { porTitulo, chamadas, erro: erroRegua, recarregar } = useRegua(
     codParc ? Number(codParc) : null
@@ -137,11 +138,24 @@ export default function Visao360() {
   const alternarTodos = () =>
     setSelecao(todosMarcados ? [] : selecionaveis.map((t) => t.nuFin));
 
-  const fecharModal = (mudou) => {
+  const fecharModal = (mudou, codChamada) => {
     setModal(null);
     if (mudou) {
       setSelecao([]);
       recarregar();
+    }
+    // Chamada gravada: leva o olho até ela no histórico, já aberta e piscando.
+    // Sem isto o modal simplesmente sumia e o operador não tinha como saber se
+    // o que ele digitou foi para algum lugar — o histórico fica no fim da
+    // página, longe de onde ele estava olhando.
+    if (codChamada) {
+      setDestaqueChamada(codChamada);
+      // Espera o recarregar() repintar o histórico antes de procurar a linha.
+      setTimeout(() => {
+        document
+          .getElementById(`chamada-${codChamada}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
     }
   };
 
@@ -169,6 +183,15 @@ export default function Visao360() {
     const id = setTimeout(() => setDestaque(null), 2600);
     return () => clearTimeout(id);
   }, [destaque]);
+
+  // Idem para a chamada recém-gravada. Dura mais: além de orientar, é a
+  // confirmação de que a chamada foi registrada, e a rolagem até ela leva um
+  // tempo antes de o operador começar a ler.
+  useEffect(() => {
+    if (destaqueChamada == null) return undefined;
+    const id = setTimeout(() => setDestaqueChamada(null), 6000);
+    return () => clearTimeout(id);
+  }, [destaqueChamada]);
 
   return (
     <>
@@ -505,6 +528,7 @@ export default function Visao360() {
                   chamadas={chamadas}
                   porNufin={porNufin}
                   aoEscolherTitulo={mostrarTitulo}
+                  destacar={destaqueChamada}
                 />
               </section>
             </div>
