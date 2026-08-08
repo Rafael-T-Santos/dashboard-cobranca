@@ -1,0 +1,29 @@
+# Dashboard de Cobrança — frontend (nginx com o build + proxy /api -> api_sankhya:5000)
+#
+# ESTADO ATUAL: publicado direto na porta 8082 do host, sem tocar em quem já roda
+#   no servidor (check-my-load é dono da 80/443; api_sankhya, da 5000).
+#   Acesso: http://192.168.255.6:8082
+#
+#   O container entra na rede do compose da API para conseguir resolver o nome
+#   "api_sankhya" no proxy_pass do nginx. Confira o nome real da rede com:
+#       docker network ls | grep internal-api
+#
+# ESTADO ALVO (quando o Nginx Proxy Manager subir — ver
+#   pigmento-pulse/docs/plano-reverse-proxy.md): remova o bloco "ports", troque a
+#   rede para "proxy" (external) e crie o Proxy Host cobranca.empresa ->
+#   cobranca-frontend:80. O api_sankhya também precisa estar na rede "proxy".
+
+services:
+  frontend:
+    build: .
+    container_name: cobranca-frontend
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    networks:
+      - api
+
+networks:
+  api:
+    name: internal-api-sankhya_default
+    external: true
