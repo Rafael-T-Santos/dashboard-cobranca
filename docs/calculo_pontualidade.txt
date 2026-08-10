@@ -1,0 +1,264 @@
+SELECT
+    P.CODPARC AS COD,
+    P.RAZAOSOCIAL AS RAZAO_SOCIAL,
+    P.NOMEPARC AS FANTASIA,
+
+    CASE
+        WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN NVL(PM.LIMCRED, 0)
+        ELSE NVL(P.LIMCRED, 0)
+    END AS LIMITE,
+
+    NVL(P.AD_LIMITE_SUGERIDO, 0) AS SUGESTAO_LIMITE,
+
+    (
+        SELECT NVL(SUM(NVL(PG.AD_LIMITE_SUGERIDO, 0)), 0)
+        FROM TGFPAR PG
+        WHERE NVL(PG.CLIENTE, 'N') = 'S'
+          AND NVL(PG.ATIVO, 'S') = 'S'
+          AND (
+                 PG.CODPARC = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+              OR PG.CODPARCMATRIZ = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+          )
+    ) AS SUGESTAO_LIMITE_GRUPO,
+
+    SUBSTR(NVL(A.MOTIVO_DECISAO, P.AD_MOTIVO_LIMCRED), 1, 250) AS MOTIVO_DECISAO,
+
+    CASE
+        WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN (
+            SELECT
+                NVL(
+                    ROUND(
+                        AVG(
+                            GREATEST(
+                                TRUNC(FIN.DTVENC) - TRUNC(FIN.DTNEG),
+                                0
+                            )
+                        )
+                    , 2)
+                , 0)
+            FROM TGFFIN FIN
+            JOIN TGFPAR PG
+              ON PG.CODPARC = FIN.CODPARC
+            WHERE FIN.RECDESP = 1
+              AND NVL(FIN.PROVISAO, 'N') = 'N'
+              AND NVL(FIN.VLRDESDOB, 0) <> 0
+              AND FIN.CODTIPTIT IN (3,4,5,39)
+              AND FIN.DTNEG IS NOT NULL
+              AND FIN.DTVENC IS NOT NULL
+              AND NVL(PG.CLIENTE, 'N') = 'S'
+              AND NVL(PG.ATIVO, 'S') = 'S'
+              AND (
+                     PG.CODPARC = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+                  OR PG.CODPARCMATRIZ = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+              )
+              AND (
+                     FIN.DHBAIXA IS NULL
+                  OR TRUNC(FIN.DHBAIXA) >= ADD_MONTHS(TRUNC(SYSDATE), -12)
+                  OR TRUNC(FIN.DTNEG)   >= ADD_MONTHS(TRUNC(SYSDATE), -12)
+              )
+        )
+        ELSE (
+            SELECT
+                NVL(
+                    ROUND(
+                        AVG(
+                            GREATEST(
+                                TRUNC(FIN.DTVENC) - TRUNC(FIN.DTNEG),
+                                0
+                            )
+                        )
+                    , 2)
+                , 0)
+            FROM TGFFIN FIN
+            WHERE FIN.CODPARC = P.CODPARC
+              AND FIN.RECDESP = 1
+              AND NVL(FIN.PROVISAO, 'N') = 'N'
+              AND NVL(FIN.VLRDESDOB, 0) <> 0
+              AND FIN.CODTIPTIT IN (3,4,5,39)
+              AND FIN.DTNEG IS NOT NULL
+              AND FIN.DTVENC IS NOT NULL
+              AND (
+                     FIN.DHBAIXA IS NULL
+                  OR TRUNC(FIN.DHBAIXA) >= ADD_MONTHS(TRUNC(SYSDATE), -12)
+                  OR TRUNC(FIN.DTNEG)   >= ADD_MONTHS(TRUNC(SYSDATE), -12)
+              )
+        )
+    END AS PRAZO_MEDIO_RECEBIMENTO,
+
+    /*
+       Pontualidade historica calculada pela PRC_ATUALIZA_LIMCREDANALISE.
+       O BI apenas exibe o resultado materializado para nao perder atrasos
+       que foram regularizados por renegociacao e para nao tratar entrada de
+       cheque na conta 16 como pagamento definitivo.
+    */
+    TO_CHAR(
+        NVL(A.PCT_PAGO_EM_DIA, 0),
+        'FM999G999G990D00'
+    ) || '%' AS PONTUALIDADE_PAGAMENTO,
+
+    CASE
+        WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN (
+            SELECT NVL(SUM(NVL(CAB.VLRNOTA, 0)), 0)
+            FROM TGFCAB CAB
+            JOIN TGFPAR PG
+              ON PG.CODPARC = CAB.CODPARC
+            WHERE CAB.TIPMOV = 'V'
+              AND CAB.CODEMP = 3
+              AND CAB.CODTIPOPER IN (1960,1999,2044,2073,2000,1961)
+              AND NVL(CAB.STATUSNOTA, 'X') = 'L'
+              AND CAB.DTNEG >= TRUNC(SYSDATE) - 30
+              AND CAB.DTNEG <  TRUNC(SYSDATE) + 1
+              AND NVL(PG.CLIENTE, 'N') = 'S'
+              AND EXISTS (
+                    SELECT 1
+                    FROM TGFPPG PPG
+                    WHERE PPG.CODTIPVENDA = CAB.CODTIPVENDA
+                      AND PPG.CODTIPTITPAD IN (3,4,5,39)
+              )
+              AND (
+                     PG.CODPARC = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+                  OR PG.CODPARCMATRIZ = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+              )
+        )
+        ELSE (
+            SELECT NVL(SUM(NVL(CAB.VLRNOTA, 0)), 0)
+            FROM TGFCAB CAB
+            WHERE CAB.CODPARC = P.CODPARC
+              AND CAB.TIPMOV = 'V'
+              AND CAB.CODEMP = 3
+              AND CAB.CODTIPOPER IN (1960,1999,2044,2073,2000,1961)
+              AND NVL(CAB.STATUSNOTA, 'X') = 'L'
+              AND CAB.DTNEG >= TRUNC(SYSDATE) - 30
+              AND CAB.DTNEG <  TRUNC(SYSDATE) + 1
+              AND EXISTS (
+                    SELECT 1
+                    FROM TGFPPG PPG
+                    WHERE PPG.CODTIPVENDA = CAB.CODTIPVENDA
+                      AND PPG.CODTIPTITPAD IN (3,4,5,39)
+              )
+        )
+    END AS VLR_COMPRA_30_DIAS,
+
+    CASE
+        WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN (
+            SELECT DESCRTIPVENDA
+            FROM (
+                SELECT
+                    NVL(TPV.DESCRTIPVENDA, 'SEM TIPO VENDA') AS DESCRTIPVENDA,
+                    COUNT(*) AS QTD_USO,
+                    SUM(NVL(CAB.VLRNOTA, 0)) AS VLR_TOTAL
+                FROM TGFCAB CAB
+                JOIN TGFPAR PG
+                  ON PG.CODPARC = CAB.CODPARC
+                LEFT JOIN TGFTPV TPV
+                  ON TPV.CODTIPVENDA = CAB.CODTIPVENDA
+                 AND TPV.DHALTER = (
+                        SELECT MAX(TPV2.DHALTER)
+                        FROM TGFTPV TPV2
+                        WHERE TPV2.CODTIPVENDA = CAB.CODTIPVENDA
+                     )
+                WHERE CAB.TIPMOV = 'V'
+                  AND CAB.CODEMP = 3
+                  AND CAB.CODTIPOPER IN (1960,1999,2044,2073,2000,1961)
+                  AND NVL(CAB.STATUSNOTA, 'X') = 'L'
+                  AND CAB.DTNEG >= ADD_MONTHS(TRUNC(SYSDATE), -12)
+                  AND CAB.DTNEG <  TRUNC(SYSDATE) + 1
+                  AND NVL(PG.CLIENTE, 'N') = 'S'
+                  AND NVL(PG.ATIVO, 'S') = 'S'
+                  AND EXISTS (
+                        SELECT 1
+                        FROM TGFPPG PPG
+                        WHERE PPG.CODTIPVENDA = CAB.CODTIPVENDA
+                          AND PPG.CODTIPTITPAD IN (3,4,5,39)
+                  )
+                  AND (
+                         PG.CODPARC = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+                      OR PG.CODPARCMATRIZ = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+                  )
+                GROUP BY
+                    NVL(TPV.DESCRTIPVENDA, 'SEM TIPO VENDA')
+                ORDER BY
+                    COUNT(*) DESC,
+                    SUM(NVL(CAB.VLRNOTA, 0)) DESC,
+                    NVL(TPV.DESCRTIPVENDA, 'SEM TIPO VENDA')
+            )
+            WHERE ROWNUM = 1
+        )
+        ELSE (
+            SELECT DESCRTIPVENDA
+            FROM (
+                SELECT
+                    NVL(TPV.DESCRTIPVENDA, 'SEM TIPO VENDA') AS DESCRTIPVENDA,
+                    COUNT(*) AS QTD_USO,
+                    SUM(NVL(CAB.VLRNOTA, 0)) AS VLR_TOTAL
+                FROM TGFCAB CAB
+                LEFT JOIN TGFTPV TPV
+                  ON TPV.CODTIPVENDA = CAB.CODTIPVENDA
+                 AND TPV.DHALTER = (
+                        SELECT MAX(TPV2.DHALTER)
+                        FROM TGFTPV TPV2
+                        WHERE TPV2.CODTIPVENDA = CAB.CODTIPVENDA
+                     )
+                WHERE CAB.CODPARC = P.CODPARC
+                  AND CAB.TIPMOV = 'V'
+                  AND CAB.CODEMP = 3
+                  AND CAB.CODTIPOPER IN (1960,1999,2044,2073,2000,1961)
+                  AND NVL(CAB.STATUSNOTA, 'X') = 'L'
+                  AND CAB.DTNEG >= ADD_MONTHS(TRUNC(SYSDATE), -12)
+                  AND CAB.DTNEG <  TRUNC(SYSDATE) + 1
+                  AND EXISTS (
+                        SELECT 1
+                        FROM TGFPPG PPG
+                        WHERE PPG.CODTIPVENDA = CAB.CODTIPVENDA
+                          AND PPG.CODTIPTITPAD IN (3,4,5,39)
+                  )
+                GROUP BY
+                    NVL(TPV.DESCRTIPVENDA, 'SEM TIPO VENDA')
+                ORDER BY
+                    COUNT(*) DESC,
+                    SUM(NVL(CAB.VLRNOTA, 0)) DESC,
+                    NVL(TPV.DESCRTIPVENDA, 'SEM TIPO VENDA')
+            )
+            WHERE ROWNUM = 1
+        )
+    END AS TIPO_NEGOCIACAO_MAIS_USADO,
+
+    FC_CHQ_PEND16_LIMITE_FEL(
+        P.CODPARC,
+        CASE
+            WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN 'S'
+            ELSE 'N'
+        END
+    ) AS CHQ_PENDENTE_CONTA16,
+
+    FC_LIM_DISP_CHQ16_FEL(
+        P.CODPARC,
+        CASE
+            WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN 'S'
+            ELSE 'N'
+        END
+    ) AS LIMITE_DISPONIVEL,
+
+    CASE
+        WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN NVL(PM.LIMCRED, 0)
+        ELSE NVL(P.LIMCRED, 0)
+    END
+    -
+    FC_LIM_DISP_CHQ16_FEL(
+        P.CODPARC,
+        CASE
+            WHEN NVL(:CODPARCMATRIZ, 0) > 0 THEN 'S'
+            ELSE 'N'
+        END
+    ) AS TOTAL_DEVIDO
+
+FROM TGFPAR P
+
+LEFT JOIN TGFPAR PM
+       ON PM.CODPARC = NVL(NULLIF(P.CODPARCMATRIZ, 0), P.CODPARC)
+
+LEFT JOIN AD_LIMCREDANALISE A
+       ON A.CODPARC = P.CODPARC
+      AND A.VERSAO_MODELO = 'V1'
+
+WHERE P.CODPARC = :CODPARC

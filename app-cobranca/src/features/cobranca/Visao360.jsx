@@ -310,7 +310,9 @@ export default function Visao360() {
                   {cliente.pontualidade == null ? (
                     <>
                       <div className="kpi-value muted">—</div>
-                      <div className="kpi-note">Sem títulos quitados nos últimos 12 meses</div>
+                      <div className="kpi-note">
+                        Sem histórico de pagamento no Sankhya
+                      </div>
                     </>
                   ) : (
                     <>
@@ -331,9 +333,30 @@ export default function Visao360() {
                           }}
                         />
                       </div>
+                      {/* Tudo aqui vem da MESMA linha da análise de crédito que
+                          deu o percentual — nada é recalculado. O atraso médio
+                          não é enfeite: o percentual acompanha ELE, e não a
+                          proporção de títulos pagos no prazo. Cliente com 99% e
+                          452 de 497 títulos pagos com atraso existe; sem o atraso
+                          médio ao lado, "99%" seria lido como "sempre paga em dia". */}
                       <div className="kpi-note">
-                        Pagos em dia · {cliente.titulosQuitados12m} quitados em 12 meses
+                        {cliente.titulosPagos12m > 0
+                          ? `${cliente.titulosPagos12m} títulos pagos em 12 meses`
+                          : "Nenhum pagamento em 12 meses"}
+                        {cliente.atrasoMedioDias != null && (
+                          <>
+                            {" · atraso médio "}
+                            {fmtNum(cliente.atrasoMedioDias)}
+                            {cliente.atrasoMedioDias === 1 ? " dia" : " dias"}
+                          </>
+                        )}
                       </div>
+                      {cliente.pontualidadeAtualizadaEm && (
+                        <div className="kpi-note">
+                          Cálculo do Sankhya · apurado em{" "}
+                          {fmtData(cliente.pontualidadeAtualizadaEm)}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
