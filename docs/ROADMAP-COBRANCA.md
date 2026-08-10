@@ -78,10 +78,24 @@ produção nesta mesma casa. DDL solta criaria uma tabela que o Sankhya não enx
 Três correções mudaram completamente o número da carteira. Estão em `cobranca.py`, com
 comentários — **não desfazer sem ler**:
 
-1. **Cheque tem regra própria** (CTEs `CHQ_NORMAL` + `DEV_1657`, do relatório oficial).
-   Um cheque *pendente* pode estar **baixado** (na conta 16); um *devolvido* entra pela
-   TOP 1657. E o vencimento que vale é o **"bom para"** (`TGFCHQ.DATACHEQUE`), não o
-   `DTVENC` — isso muda data, dias de atraso, ordenação e filtro de período.
+1. **Cheque tem regra própria** (CTEs `CHQ_NORMAL` + `CHQ_ABERTO` + `DEV_1657`, do
+   relatório oficial). Um cheque *pendente* pode estar **baixado** (na conta 16); um
+   *em aberto* ainda não teve baixa nenhuma; um *devolvido* entra pela TOP 1657. E o
+   vencimento que vale é o **"bom para"** (`TGFCHQ.DATACHEQUE`), não o `DTVENC` — isso
+   muda data, dias de atraso, ordenação e filtro de período.
+   **Correção de 2026-08-10 (revisão do DBA):** faltava o `CHQ_ABERTO`. O cheque ainda
+   sem baixa não aparecia em lugar nenhum, porque as duas CTEs existentes exigiam ou
+   baixa na conta 16 ou a TOP 1657 — e porque `AD_ACERTADO = 'N'`, que ambas filtram,
+   vem `'S'` nesses cheques. Foi a queixa da gerente de que "a consulta de títulos está
+   errada". A CTE nova não filtra `AD_ACERTADO`, aceita cheque sem registro na `TGFCHQ`
+   (o número sai da nota) e repete a exclusão por devolução da TOP 1657 — sem ela o
+   mesmo cheque contaria duas vezes, como "em aberto" e como "devolvido".
+   Os arquivos do DBA estão em `docs/`: `consulta_completa_ajustada_cheques_abertos.txt`
+   é **a referência** (SQL puro) e `cobranca_PROJETO_COMPLETO_AJUSTADO_CHEQUES_ABERTOS.txt`
+   é uma cópia do `cobranca.py` da API — **snapshot, não é código vivo**, e chegou com
+   duas guardas a menos que o SQL (o `NVL` do número e o `NOT EXISTS` da TOP 1657).
+   Medido no banco em 2026-08-10: `CHQ_ABERTO` = **815 títulos, R$ 1.637.511,89**, dos
+   quais só **260 já venceram**; `CHQ_NORMAL` (442) e `TOP_1657` (58) não se mexeram.
 2. **`RECDESP` não é "receita vs. despesa".** `1` = título ativo; `0` = **neutralizado**
    (origem de renegociação, já substituído — **não é mais dívida**); `-1` = despesa.
    Incluir o `0` conta a mesma dívida duas vezes (chegamos a inflar em R$ 4,1 milhões).

@@ -1,0 +1,692 @@
+WITH ULT_EVENTO AS (
+    SELECT
+        ECQ.NUCHQ,
+        ECQ.NUEVENTO,
+        ECQ.DHEVENTO,
+        ECQ.TIPO,
+        ROW_NUMBER() OVER (
+            PARTITION BY ECQ.NUCHQ
+            ORDER BY ECQ.NUEVENTO DESC, ECQ.DHEVENTO DESC
+        ) AS RN
+    FROM TGFECQ ECQ
+),
+
+/* =========================================================
+   1. CHEQUE PENDENTE
+      Já foi baixado na conta 16, mas ainda não foi acertado,
+      compensado, repassado ou resolvido.
+   ========================================================= */
+CHQ_NORMAL AS (
+    SELECT
+        'P' AS STATUS_REGRA,
+        'CHQ_NORMAL' AS ORIGEM_REGRA,
+        FIN.NUFIN,
+
+        TO_CHAR(CHQ.NUMCHEQUE) AS CHEQUE,
+
+        ROUND(
+            NVL(
+                NULLIF(CHQ.VLRCHEQUE, 0),
+                NVL(FIN.VLRDESDOB, 0)
+            ),
+            2
+        ) AS VLRCHEQUE_REGRA,
+
+        NVL(CHQ.DATACHEQUE, FIN.DTVENC) AS DATACHEQUE_REGRA,
+
+        'Pendente' AS ULTIMO_EVENTO_REGRA
+
+    FROM TGFFIN FIN
+
+    JOIN TGFCHQ CHQ
+      ON CHQ.NUFIN = FIN.NUFIN
+
+    JOIN ULT_EVENTO ULT
+      ON ULT.NUCHQ = CHQ.NUCHQ
+     AND ULT.RN = 1
+
+    WHERE FIN.CODTIPTIT = 3
+      AND FIN.RECDESP = 1
+      AND NVL(FIN.PROVISAO, 'N') = 'N'
+
+      AND FIN.AD_ACERTADO = 'N'
+
+      AND NVL(FIN.CODTIPOPER, 0) <> 1657
+
+      /* Já entrou na conta 16 */
+      AND FIN.DHBAIXA IS NOT NULL
+      AND NVL(FIN.VLRBAIXA, 0) > 0
+      AND NVL(FIN.CODCTABCOINT, -1) = 16
+
+      AND ULT.TIPO = 'B'
+
+      AND NVL(CHQ.STATUS, 'X') <> 'T'
+      AND NVL(FIN.NUCOMPENS, 0) = 0
+
+      /* Não pega título de origem de renegociação */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFREN REN_ORIG
+            WHERE REN_ORIG.NUFIN = FIN.NUFIN
+      )
+
+      AND NVL(CHQ.DATACHEQUE, FIN.DTVENC) IS NOT NULL
+
+      AND REGEXP_LIKE(
+            TRIM(TO_CHAR(CHQ.NUMCHEQUE)),
+            '[1-9]'
+      )
+
+      AND REGEXP_LIKE(
+            REGEXP_REPLACE(
+                TRIM(
+                    TO_CHAR(
+                        NVL(FIN.CONTA_CMC7, CHQ.CMC7)
+                    )
+                ),
+                '[^0-9]',
+                ''
+            ),
+            '[1-9]'
+      )
+
+      /* Não pode ter sido compensado/acertado */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFFRE FRE
+            WHERE FRE.NUFIN = FIN.NUFIN
+              AND FRE.TIPACERTO = 'C'
+      )
+
+      /* Não pode existir pagamento/transferência posterior
+         sem uma devolução posterior */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFECQ EVTPAG
+            WHERE EVTPAG.NUCHQ = CHQ.NUCHQ
+              AND EVTPAG.TIPO IN ('P', 'T')
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM TGFECQ EVTDEV
+                    WHERE EVTDEV.NUCHQ = EVTPAG.NUCHQ
+                      AND EVTDEV.TIPO = 'D'
+                      AND NVL(EVTDEV.NUEVENTO, 0)
+                          > NVL(EVTPAG.NUEVENTO, 0)
+              )
+      )
+
+      /* Não deixa entrar cheque que já possui devolução TOP 1657 */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFFIN DEV
+            WHERE DEV.CODPARC = FIN.CODPARC
+              AND DEV.RECDESP = 1
+              AND DEV.CODTIPOPER = 1657
+              AND NVL(DEV.PROVISAO, 'N') = 'N'
+              AND (
+                    REGEXP_LIKE(
+                        UPPER(NVL(DEV.HISTORICO, ' ')),
+                        '(^|[^0-9])0*'
+                        || NVL(
+                            NULLIF(
+                                LTRIM(
+                                    TO_CHAR(CHQ.NUMCHEQUE),
+                                    '0'
+                                ),
+                                ''
+                            ),
+                            '0'
+                        )
+                        || '([^0-9]|$)'
+                    )
+
+                    OR
+
+                    NVL(
+                        NULLIF(
+                            LTRIM(
+                                TO_CHAR(DEV.NUMNOTA),
+                                '0'
+                            ),
+                            ''
+                        ),
+                        '0'
+                    )
+                    =
+                    NVL(
+                        NULLIF(
+                            LTRIM(
+                                TO_CHAR(CHQ.NUMCHEQUE),
+                                '0'
+                            ),
+                            ''
+                        ),
+                        '0'
+                    )
+              )
+      )
+),
+
+/* =========================================================
+   2. CHEQUE EM ABERTO
+      NOVA REGRA.
+
+      Cheque financeiro ainda SEM BAIXA.
+      Não precisa ter passado pela conta 16.
+
+      Esse é o caso que estava faltando.
+   ========================================================= */
+CHQ_ABERTO AS (
+    SELECT
+        'A' AS STATUS_REGRA,
+        'CHQ_ABERTO' AS ORIGEM_REGRA,
+        FIN.NUFIN,
+
+        TO_CHAR(
+            NVL(
+                CHQ.NUMCHEQUE,
+                FIN.NUMNOTA
+            )
+        ) AS CHEQUE,
+
+        ROUND(
+            NVL(
+                NULLIF(CHQ.VLRCHEQUE, 0),
+                NVL(FIN.VLRDESDOB, 0)
+            ),
+            2
+        ) AS VLRCHEQUE_REGRA,
+
+        NVL(
+            CHQ.DATACHEQUE,
+            FIN.DTVENC
+        ) AS DATACHEQUE_REGRA,
+
+        'Em aberto' AS ULTIMO_EVENTO_REGRA
+
+    FROM TGFFIN FIN
+
+    /* LEFT JOIN de propósito:
+       o financeiro pode ainda não possuir registro completo na TGFCHQ */
+    LEFT JOIN TGFCHQ CHQ
+           ON CHQ.NUFIN = FIN.NUFIN
+
+    WHERE FIN.CODTIPTIT = 3
+
+      AND FIN.RECDESP = 1
+
+      AND NVL(FIN.PROVISAO, 'N') = 'N'
+
+      /* IMPORTANTE:
+         Para cheque ainda SEM BAIXA, AD_ACERTADO não é usado como filtro.
+         Nos testes reais, os cheques em aberto estavam com AD_ACERTADO = 'S'.
+         O que define esta categoria é estar sem baixa/compensação e não ser TOP 1657. */
+
+      /* Devolução é tratada separadamente */
+      AND NVL(FIN.CODTIPOPER, 0) <> 1657
+
+      /* =====================================================
+         PRINCIPAL DIFERENÇA:
+         CHEQUE AINDA NÃO FOI BAIXADO
+         ===================================================== */
+      AND FIN.DHBAIXA IS NULL
+
+      AND NVL(FIN.VLRBAIXA, 0) = 0
+
+      AND NVL(FIN.NUCOMPENS, 0) = 0
+
+      /* Não pega título antigo que foi substituído
+         por uma renegociação */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFREN REN_ORIG
+            WHERE REN_ORIG.NUFIN = FIN.NUFIN
+      )
+
+      /* Precisa possuir vencimento/bom-para */
+      AND NVL(
+            CHQ.DATACHEQUE,
+            FIN.DTVENC
+          ) IS NOT NULL
+
+      /* Não pode estar marcado como transferido */
+      AND NVL(CHQ.STATUS, 'X') <> 'T'
+
+      /* Não pode ter acerto/compensação registrado */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFFRE FRE
+            WHERE FRE.NUFIN = FIN.NUFIN
+              AND FRE.TIPACERTO = 'C'
+      )
+
+      /* Se existir TGFCHQ, não pode ter evento de
+         pagamento/transferência definitivo */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFECQ EVTPAG
+            WHERE EVTPAG.NUCHQ = CHQ.NUCHQ
+              AND EVTPAG.TIPO IN ('P', 'T')
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM TGFECQ EVTDEV
+                    WHERE EVTDEV.NUCHQ = EVTPAG.NUCHQ
+                      AND EVTDEV.TIPO = 'D'
+                      AND NVL(EVTDEV.NUEVENTO, 0)
+                          > NVL(EVTPAG.NUEVENTO, 0)
+              )
+      )
+
+      /* Não deixa trazer o cheque original caso
+         já exista devolução pela TOP 1657 */
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFFIN DEV
+            WHERE DEV.CODPARC = FIN.CODPARC
+              AND DEV.RECDESP = 1
+              AND DEV.CODTIPOPER = 1657
+              AND NVL(DEV.PROVISAO, 'N') = 'N'
+              AND (
+                    REGEXP_LIKE(
+                        UPPER(NVL(DEV.HISTORICO, ' ')),
+                        '(^|[^0-9])0*'
+                        ||
+                        NVL(
+                            NULLIF(
+                                LTRIM(
+                                    TO_CHAR(
+                                        NVL(
+                                            CHQ.NUMCHEQUE,
+                                            FIN.NUMNOTA
+                                        )
+                                    ),
+                                    '0'
+                                ),
+                                ''
+                            ),
+                            '0'
+                        )
+                        ||
+                        '([^0-9]|$)'
+                    )
+
+                    OR
+
+                    NVL(
+                        NULLIF(
+                            LTRIM(
+                                TO_CHAR(DEV.NUMNOTA),
+                                '0'
+                            ),
+                            ''
+                        ),
+                        '0'
+                    )
+                    =
+                    NVL(
+                        NULLIF(
+                            LTRIM(
+                                TO_CHAR(
+                                    NVL(
+                                        CHQ.NUMCHEQUE,
+                                        FIN.NUMNOTA
+                                    )
+                                ),
+                                '0'
+                            ),
+                            ''
+                        ),
+                        '0'
+                    )
+              )
+      )
+),
+
+/* =========================================================
+   3. CHEQUE DEVOLVIDO
+      TOP 1657 ainda em aberto
+   ========================================================= */
+DEV_1657 AS (
+    SELECT
+        'D' AS STATUS_REGRA,
+        'TOP_1657' AS ORIGEM_REGRA,
+        FIN.NUFIN,
+
+        COALESCE(
+            REGEXP_REPLACE(
+                REGEXP_SUBSTR(
+                    UPPER(NVL(FIN.HISTORICO, '')),
+                    '(CH|CHQ|CHEQ|CHEQUE)[^0-9]{0,30}[0-9]{1,10}'
+                ),
+                '[^0-9]',
+                ''
+            ),
+
+            REGEXP_REPLACE(
+                REGEXP_SUBSTR(
+                    UPPER(NVL(FIN.HISTORICO, '')),
+                    '[0-9]{1,10}[[:space:]-]*(CH|CHQ|CHEQ|CHEQUE)'
+                ),
+                '[^0-9]',
+                ''
+            ),
+
+            TO_CHAR(FIN.NUMNOTA)
+        ) AS CHEQUE,
+
+        ROUND(
+            NVL(FIN.VLRDESDOB, 0),
+            2
+        ) AS VLRCHEQUE_REGRA,
+
+        FIN.DTVENC AS DATACHEQUE_REGRA,
+
+        'Devolução' AS ULTIMO_EVENTO_REGRA
+
+    FROM TGFFIN FIN
+
+    WHERE FIN.CODTIPTIT = 3
+
+      AND FIN.RECDESP = 1
+
+      AND NVL(FIN.PROVISAO, 'N') = 'N'
+
+      AND FIN.AD_ACERTADO = 'N'
+
+      AND FIN.CODTIPOPER = 1657
+
+      AND FIN.DHBAIXA IS NULL
+
+      AND NVL(FIN.VLRBAIXA, 0) = 0
+
+      AND NVL(FIN.NUCOMPENS, 0) = 0
+
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFREN REN_ORIG
+            WHERE REN_ORIG.NUFIN = FIN.NUFIN
+      )
+
+      AND FIN.DTVENC IS NOT NULL
+
+      AND NOT EXISTS (
+            SELECT 1
+            FROM TGFFRE FRE
+            WHERE FRE.NUFIN = FIN.NUFIN
+              AND FRE.TIPACERTO = 'C'
+      )
+),
+
+/* =========================================================
+   CONSOLIDA TODAS AS SITUAÇÕES DE CHEQUE
+   ========================================================= */
+CHEQUES_REGRA AS (
+
+    SELECT
+        STATUS_REGRA,
+        ORIGEM_REGRA,
+        NUFIN,
+        CHEQUE,
+        VLRCHEQUE_REGRA,
+        DATACHEQUE_REGRA,
+        ULTIMO_EVENTO_REGRA
+    FROM CHQ_NORMAL
+
+    UNION ALL
+
+    SELECT
+        STATUS_REGRA,
+        ORIGEM_REGRA,
+        NUFIN,
+        CHEQUE,
+        VLRCHEQUE_REGRA,
+        DATACHEQUE_REGRA,
+        ULTIMO_EVENTO_REGRA
+    FROM CHQ_ABERTO
+
+    UNION ALL
+
+    SELECT
+        STATUS_REGRA,
+        ORIGEM_REGRA,
+        NUFIN,
+        CHEQUE,
+        VLRCHEQUE_REGRA,
+        DATACHEQUE_REGRA,
+        ULTIMO_EVENTO_REGRA
+    FROM DEV_1657
+)
+
+/* =========================================================
+   CONSULTA PRINCIPAL
+   ========================================================= */
+SELECT
+    FIN.NOSSONUM,
+    FIN.NUCOMPENS,
+    FIN.NUNOTA,
+    FIN.DTNEG,
+
+    CASE
+        WHEN FIN.CODTIPTIT = 3
+        THEN CHR.DATACHEQUE_REGRA
+        ELSE FIN.DTVENC
+    END AS DT_VENCIMENTO,
+
+    FIN.NUFIN,
+    FIN.NUMNOTA,
+    FIN.VLRDESDOB,
+    VFIN.VLRLIQUIDO,
+
+    CASE
+        WHEN FIN.CODTIPTIT = 3
+        THEN CHR.VLRCHEQUE_REGRA
+        ELSE FIN.VLRCHEQUE
+    END AS VLR_CHEQUE,
+
+    CASE
+        WHEN FIN.CODTIPTIT = 3
+        THEN CHR.CHEQUE
+    END AS NUMERO_CHEQUE,
+
+    FIN.HISTORICO,
+
+    CTA.DESCRICAO AS CONTA_BANCARIA,
+
+    PAR.RAZAOSOCIAL,
+    FIN.CODPARC,
+    PAR.NOMEPARC,
+    PAR.TELEFONE,
+
+    CID.CODCID,
+    CID.NOMECID,
+    UFS.UF,
+
+    FIN.CGC_CPF_CMC7,
+
+    FIN.CODTIPTIT,
+    TIT.DESCRTIPTIT,
+
+    /* =====================================================
+       SITUAÇÃO EXIBIDA NO PROJETO
+       ===================================================== */
+    CASE
+
+        WHEN FIN.CODTIPTIT = 3
+         AND CHR.STATUS_REGRA = 'P'
+        THEN 'CHEQUE PENDENTE'
+
+        WHEN FIN.CODTIPTIT = 3
+         AND CHR.STATUS_REGRA = 'A'
+        THEN 'CHEQUE EM ABERTO'
+
+        WHEN FIN.CODTIPTIT = 3
+         AND CHR.STATUS_REGRA = 'D'
+        THEN 'CHEQUE DEVOLVIDO'
+
+        WHEN FIN.CODTIPTIT <> 3
+         AND FIN.NURENEG IS NOT NULL
+        THEN 'TÍTULO RENEGOCIADO VENCIDO SEM PAGAMENTO'
+
+        WHEN FIN.CODTIPTIT IN (2, 4, 5, 39)
+        THEN 'TÍTULO VENCIDO SEM PAGAMENTO'
+
+    END AS SITUACAO,
+
+    CASE
+        WHEN FIN.CODTIPTIT = 3
+        THEN CHR.ULTIMO_EVENTO_REGRA
+    END AS ULTIMO_EVENTO,
+
+    CASE
+        WHEN FIN.CODTIPTIT = 3
+        THEN CHR.ORIGEM_REGRA
+    END AS ORIGEM_REGRA,
+
+    FIN.NURENEG,
+
+    NVL(FIN.VLRDESC, 0) AS VLRDESC,
+
+    CASE
+        WHEN LENGTH(
+            REGEXP_REPLACE(
+                PAR.CGC_CPF,
+                '[^0-9]',
+                ''
+            )
+        ) = 14
+        THEN
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                    PAR.CGC_CPF,
+                    '[^0-9]',
+                    ''
+                ),
+                '([0-9]{2})([0-9]{3})([0-9]{3})([0-9]{4})([0-9]{2})',
+                '\1.\2.\3/\4-\5'
+            )
+
+        WHEN LENGTH(
+            REGEXP_REPLACE(
+                PAR.CGC_CPF,
+                '[^0-9]',
+                ''
+            )
+        ) = 11
+        THEN
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                    PAR.CGC_CPF,
+                    '[^0-9]',
+                    ''
+                ),
+                '([0-9]{3})([0-9]{3})([0-9]{3})([0-9]{2})',
+                '\1.\2.\3-\4'
+            )
+
+        ELSE PAR.CGC_CPF
+
+    END AS CNPJ_CPF,
+
+    NVL(FIN.VLRJURO, 0) AS VLRJURO,
+
+    GREATEST(
+        TRUNC(SYSDATE)
+        -
+        TRUNC(
+            CASE
+                WHEN FIN.CODTIPTIT = 3
+                THEN CHR.DATACHEQUE_REGRA
+                ELSE FIN.DTVENC
+            END
+        ),
+        0
+    ) AS ATRASO_DIAS,
+
+    NVL(
+        VEN.APELIDO,
+        'SEM VENDEDOR'
+    ) AS VENDEDOR,
+
+    FIN.CODOBSPADRAO,
+    OBS.OBSERVACAO,
+    FIN.DESDOBRAMENTO,
+    FIN.NOMEEMITENTE_CMC7,
+    FIN.RECDESP,
+    FIN.CODTIPOPER,
+    TOP.DESCROPER
+
+FROM TGFFIN FIN
+
+INNER JOIN TGFPAR PAR
+        ON PAR.CODPARC = FIN.CODPARC
+
+LEFT JOIN TSICID CID
+       ON CID.CODCID = PAR.CODCID
+
+LEFT JOIN TSIUFS UFS
+       ON UFS.CODUF = CID.UF
+
+LEFT JOIN TGFTIT TIT
+       ON TIT.CODTIPTIT = FIN.CODTIPTIT
+
+LEFT JOIN TGFVEN VEN
+       ON VEN.CODVEND = FIN.CODVEND
+
+LEFT JOIN TSICTA CTA
+       ON CTA.CODCTABCOINT = FIN.CODCTABCOINT
+
+LEFT JOIN TGFOBS OBS
+       ON OBS.CODOBSPADRAO = FIN.CODOBSPADRAO
+
+LEFT JOIN VGFFIN VFIN
+       ON VFIN.NUFIN = FIN.NUFIN
+
+LEFT JOIN CHEQUES_REGRA CHR
+       ON CHR.NUFIN = FIN.NUFIN
+
+LEFT JOIN TGFTOP TOP
+       ON TOP.CODTIPOPER = FIN.CODTIPOPER
+      AND TOP.DHALTER = FIN.DHTIPOPER
+
+WHERE FIN.RECDESP = 1
+
+  AND NVL(FIN.PROVISAO, 'N') = 'N'
+
+  AND (
+        /* Títulos normais ainda em aberto */
+        (
+            FIN.CODTIPTIT IN (2, 4, 5, 39)
+            AND FIN.DHBAIXA IS NULL
+        )
+
+        OR
+
+        /* =================================================
+           CHEQUES:
+           P = pendente conta 16
+           A = cheque em aberto / sem baixa
+           D = devolvido
+           ================================================= */
+        (
+            FIN.CODTIPTIT = 3
+            AND CHR.NUFIN IS NOT NULL
+        )
+
+        OR
+
+        /* Título ativo gerado por renegociação */
+        (
+            FIN.CODTIPTIT NOT IN (2, 3, 4, 5, 39)
+            AND FIN.NURENEG IS NOT NULL
+            AND FIN.DHBAIXA IS NULL
+        )
+      )
+
+ORDER BY
+    CASE
+        WHEN FIN.CODTIPTIT = 3
+        THEN CHR.DATACHEQUE_REGRA
+        ELSE FIN.DTVENC
+    END,
+    PAR.NOMEPARC,
+    FIN.NUFIN;
