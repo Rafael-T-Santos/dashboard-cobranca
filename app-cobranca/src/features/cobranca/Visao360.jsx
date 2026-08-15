@@ -11,6 +11,7 @@ import HistoricoChamadas from "./HistoricoChamadas.jsx";
 import { useAuth } from "../auth/AuthProvider.jsx";
 import { useRegua } from "./useRegua";
 import ModalChamada from "./ModalChamada.jsx";
+import ModalPagamento from "./ModalPagamento.jsx";
 
 const ABAS = [
   { k: "todos", t: "Todos" },
@@ -43,6 +44,7 @@ export default function Visao360() {
   const [aba, setAba] = useState("todos");
   const [selecao, setSelecao] = useState([]);
   const [modal, setModal] = useState(null); // { sentido, titulos }
+  const [modalPagto, setModalPagto] = useState(null); // { titulos } — informou pagamento
   const [destaque, setDestaque] = useState(null); // nuFin realçado no extrato
   const [destaqueChamada, setDestaqueChamada] = useState(null); // chamada recém-gravada
   const [avisoTrava, setAvisoTrava] = useState(null); // { nufin, trava } explicando o cadeado
@@ -140,11 +142,24 @@ export default function Visao360() {
   const alternarTodos = () =>
     setSelecao(todosMarcados ? [] : selecionaveis.map((t) => t.nuFin));
 
+  // O marcador de pagamento informado vem NA LINHA do título, pelo /extrato —
+  // então recarregar só a régua não o traria de volta à tela.
+  const recarregarExtrato = () => {
+    if (!codParc) return;
+    getExtrato(Number(codParc))
+      .then(setTitulos)
+      .catch(() => {
+        /* a tela já tem os títulos antigos; erro aqui não pode apagá-los */
+      });
+  };
+
   const fecharModal = (mudou, codChamada) => {
     setModal(null);
+    setModalPagto(null);
     if (mudou) {
       setSelecao([]);
       recarregar();
+      recarregarExtrato();
     }
     // Chamada gravada: leva o olho até ela no histórico, já aberta e piscando.
     // Sem isto o modal simplesmente sumia e o operador não tinha como saber se
@@ -412,6 +427,13 @@ export default function Visao360() {
                     <div className="espaco" />
                     <button
                       className="btn ghost"
+                      onClick={() => setModalPagto({ titulos: selecionados })}
+                      title="O cliente avisou que pagou — não dá baixa, quem dá é o financeiro"
+                    >
+                      Informou pagamento
+                    </button>
+                    <button
+                      className="btn ghost"
                       onClick={() => setModal({ sentido: "RECEPTIVA", titulos: selecionados })}
                       title="O cliente ligou para nós — não conta na régua"
                     >
@@ -554,6 +576,26 @@ export default function Visao360() {
                               )}
                             </td>
                             <td className="col-cobr">
+                              {/* Vem do /extrato, na própria linha do título.
+                                  A DATA fica visível no badge de propósito: é o
+                                  que faz um marcador velho parecer velho, já
+                                  que não existe (nem vai existir) tela de
+                                  conciliação cobrando a baixa do financeiro. */}
+                              {t.pagamentoInformado && (
+                                <span
+                                  className="badge pagto"
+                                  title={
+                                    `Informado por ${
+                                      t.pagamentoInformado.nomeUsu ||
+                                      `usuário ${t.pagamentoInformado.codUsu}`
+                                    } em ${dataHora(t.pagamentoInformado.dhInformado)}` +
+                                    " · a baixa é feita no Sankhya pelo financeiro"
+                                  }
+                                >
+                                  Pagamento informado{" "}
+                                  {fmtData(String(t.pagamentoInformado.dhInformado).slice(0, 10))}
+                                </span>
+                              )}
                               {r.trava && (
                                 <button
                                   type="button"
@@ -640,6 +682,15 @@ export default function Visao360() {
           // Histórico já carregado pela 360°: o aviso de "já ligou hoje" sai
           // daqui em vez de uma consulta nova ao abrir o modal.
           chamadas={chamadas}
+          aoFechar={fecharModal}
+        />
+      )}
+
+      {modalPagto && (
+        <ModalPagamento
+          codParc={Number(codParc)}
+          titulos={modalPagto.titulos}
+          operador={operador}
           aoFechar={fecharModal}
         />
       )}

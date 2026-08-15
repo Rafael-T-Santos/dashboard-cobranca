@@ -1434,6 +1434,13 @@ td.col-cobr .badge + .badge {
   background: var(--accent-faint);
   color: var(--accent);
 }
+/* "Pagamento informado": verde, mas o texto diz INFORMADO e traz a data. Não é
+   confirmação de baixa — quem baixa é o financeiro, no Sankhya. Verde chapado
+   com a palavra "pago" faria a tela mentir. */
+.badge.pagto {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
 /* A partir da 3ª chamada o título está elegível ao jurídico — o vermelho é o
    aviso de que a régua acabou. */
 .badge.regua.juri {

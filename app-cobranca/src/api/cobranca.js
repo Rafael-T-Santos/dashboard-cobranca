@@ -100,6 +100,16 @@ export function anexarArquivo(codChamada, arquivo, descricao) {
   return apiUpload(`/api/cobranca/chamadas/${codChamada}/anexos/arquivo`, dados);
 }
 
+/**
+ * Registra que o CLIENTE INFORMOU o pagamento dos títulos.
+ *
+ * É "informou", nunca "pago": a baixa é do financeiro e sai no Sankhya depois.
+ * Devolve { codChamada } para pendurar o comprovante em anexarArquivo().
+ */
+export function registrarPagamentoInformado({ codParc, nufins, obs }) {
+  return apiPost("/api/cobranca/pagamento-informado", { codParc, nufins, obs });
+}
+
 /** Histórico de chamadas do cliente (com itens e anexos). */
 export function getChamadas(codParc) {
   return apiGet(`/api/cobranca/chamadas?codParc=${codParc}`).then(
