@@ -8,6 +8,7 @@ export const ROTULO_STATUS = {
   CAIXA_POSTAL: "Não atendeu",
   RECUSOU: "Recusou falar",
   AGENDOU: "Agendou retorno",
+  INFORMOU_PAGTO: "Informou pagamento",
 };
 
 // ACORDO é RENEGOCIAÇÃO FORMAL, e só. Promessa de pagamento ("pago sexta") NÃO
@@ -19,7 +20,13 @@ export const ROTULO_DESFECHO = {
   ACORDO: "renegociação formal",
   SEM_ACORDO: "sem acordo",
   EM_ABERTO: "em aberto",
+  PAGAMENTO_INFORMADO: "pagamento informado",
 };
+
+// Todo valor dos domínios acima PRECISA existir aqui. O `|| valor` que as telas
+// usam é rede de segurança contra dado velho no banco, não permissão para
+// esquecer a tradução: sem a entrada, a tela mostra PAGAMENTO_INFORMADO cru,
+// com underline e tudo — foi o que aconteceu ao criar esse desfecho.
 
 export const ROTULO_SENTIDO = {
   PROATIVA: "proativa",
