@@ -624,7 +624,9 @@ export default function Visao360() {
                                   {rotuloOrdem(r.ordem)}
                                 </span>
                               )}
-                              {!r.trava && !r.ordem && <span className="vazio">—</span>}
+                              {!t.pagamentoInformado && !r.trava && !r.ordem && (
+                                <span className="vazio">—</span>
+                              )}
                             </td>
                             <td className="num">{fmtBRL(valorTitulo(t))}</td>
                             <td className="num">

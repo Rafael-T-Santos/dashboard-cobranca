@@ -1392,11 +1392,19 @@ tr.travada > td {
 tr.travada .tit-id {
   opacity: 0.65;
 }
+/* A célula acumula fatos independentes: pagamento informado, trava e posição na
+   régua podem aparecer os três ao mesmo tempo. Com nowrap na célula eles
+   ficavam numa linha só e esticavam a coluna, empurrando a tabela na
+   horizontal. Agora a CÉLULA quebra entre badges e cada BADGE é que não quebra
+   no meio — a linha só cresce quando há mais de um. */
 td.col-cobr {
-  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
 }
-td.col-cobr .badge + .badge {
-  margin-left: 4px;
+td.col-cobr .badge {
+  white-space: nowrap;
 }
 .vazio {
   color: var(--muted);
