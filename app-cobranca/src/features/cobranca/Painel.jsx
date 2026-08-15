@@ -23,9 +23,24 @@ const ABAS = [
   { k: "AGENDADO", t: "Agendados" },
   { k: "EM_ANDAMENTO", t: "Em andamento" },
   { k: "ACORDO", t: "Renegociados" },
+  { k: "pagamento", t: "Informou pagamento" },
   { k: "juridico", t: "Elegíveis ao jurídico" },
   { k: "SEM_DIVIDA", t: "Sem dívida" },
 ];
+
+// Regra de cada aba num lugar só. A lista e o contador do topo PRECISAM
+// concordar, e a condição estava escrita duas vezes — bastava alguém mexer numa
+// delas para a aba dizer "3" e mostrar 5 linhas.
+//
+// "juridico" e "pagamento" não são situações: são sinalizadores, e por isso não
+// entram na comparação com c.situacao. Um cliente pode ter informado pagamento E
+// estar com retorno atrasado; virar situação exclusiva esconderia um dos dois.
+const passaAba = (c, k) => {
+  if (k === "todos") return true;
+  if (k === "juridico") return c.podeJuridico;
+  if (k === "pagamento") return c.titulosPagamentoInformado > 0;
+  return c.situacao === k;
+};
 
 export default function Painel() {
   const navegar = useNavigate();
@@ -55,6 +70,7 @@ export default function Painel() {
       agendados: conta((c) => c.situacao === "AGENDADO"),
       juridico: conta((c) => c.podeJuridico),
       acordo: conta((c) => c.situacao === "ACORDO"),
+      pagamento: conta((c) => c.titulosPagamentoInformado > 0),
       chamadas: clientes.reduce((s, c) => s + c.qtdChamadas, 0),
     };
   }, [clientes]);
@@ -62,11 +78,7 @@ export default function Painel() {
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return clientes
-      .filter((c) => {
-        if (aba === "juridico") return c.podeJuridico;
-        if (aba !== "todos" && c.situacao !== aba) return false;
-        return true;
-      })
+      .filter((c) => passaAba(c, aba))
       .filter((c) => {
         if (!termo) return true;
         return (
@@ -88,12 +100,7 @@ export default function Painel() {
     [visiveis]
   );
 
-  const contaAba = (k) =>
-    k === "todos"
-      ? clientes.length
-      : k === "juridico"
-      ? clientes.filter((c) => c.podeJuridico).length
-      : clientes.filter((c) => c.situacao === k).length;
+  const contaAba = (k) => clientes.filter((c) => passaAba(c, k)).length;
 
   return (
     <>
@@ -156,9 +163,14 @@ export default function Painel() {
                   <div className="kpi-note">3ª chamada sem acordo</div>
                 </div>
                 <div className="kpi">
-                  <div className="kpi-label">Com acordo</div>
+                  <div className="kpi-label">Renegociados</div>
                   <div className="kpi-value">{fmtNum(kpis.acordo)}</div>
-                  <div className="kpi-note">último desfecho foi acordo</div>
+                  <div className="kpi-note">renegociação formal registrada</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-label">Informou pagamento</div>
+                  <div className="kpi-value">{fmtNum(kpis.pagamento)}</div>
+                  <div className="kpi-note">avisaram que pagaram; a baixa sai no Sankhya</div>
                 </div>
               </div>
 
@@ -224,6 +236,20 @@ export default function Painel() {
                               {c.emChamadaAgora && (
                                 <span className="badge trava" title="Alguém está com este cliente na linha agora">
                                   🔒 em chamada
+                                </span>
+                              )}
+                              {c.titulosPagamentoInformado > 0 && (
+                                <span
+                                  className="badge pagto"
+                                  title={
+                                    `${c.titulosPagamentoInformado} título(s) em que o cliente ` +
+                                    `avisou que pagou, o último em ${dataHora(
+                                      c.pagamentoInformadoEm
+                                    )}. A baixa é feita no Sankhya pelo financeiro — quando ` +
+                                    "sair, o título deixa a carteira e este aviso some sozinho."
+                                  }
+                                >
+                                  informou pagamento ({c.titulosPagamentoInformado})
                                 </span>
                               )}
                             </td>

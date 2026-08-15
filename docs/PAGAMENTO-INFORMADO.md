@@ -214,15 +214,30 @@ Dois achados colaterais:
    É um caso só, então é hipótese — mas basta para não construir nada em cima dessa
    coluna. Era premissa da conciliação que o §8 descartou de qualquer forma.
 
-## 11. Ordem de execução
+## 11. Ordem de execução — **concluída em 2026-08-15**
 
-1. Backend: os dois valores de domínio + `POST /pagamento-informado` + CTE
-   `PAGTO_INFO` no `/extrato`.
-2. Front: botão "Informou pagamento" na 360° + badge no extrato.
-3. Front: badge em Títulos Vencidos (herda filtro e ordenação).
-4. Painel: sinalizador de "informou pagamento" na linha do cliente.
+1. ✅ Backend: os dois valores de domínio + `POST /pagamento-informado` + CTE
+   `PAGTO_INFO` no `/extrato`. *(API `a6fbbdf`)*
+2. ✅ Front: botão "Informou pagamento" na 360° + badge no extrato.
+   *(front `de2aef6`, `649c3fa`, `ad4a7b8`)* — testado em produção, com e sem
+   comprovante.
+3. ✅ Front: badge em Títulos Vencidos, herdando filtro, contagem e ordenação.
+   *(API `269f094` + front `3c4605d`)*
+4. ✅ Painel: sinalizador `titulosPagamentoInformado` na linha do cliente, com
+   aba e KPI próprios.
 
-Cada passo é útil sozinho: o 2 já resolve a queixa original da Fabiana.
+Cada passo era útil sozinho: o 2 já resolveu a queixa original da Fabiana.
+
+Notas do passo 4:
+- O sinalizador conta só títulos **que ainda estão na carteira** (o join é com a
+  CTE `CARTEIRA`). Quando a baixa sai, o título deixa a carteira e o sinal se
+  apaga sozinho — nenhuma rotina de limpeza.
+- As colunas novas entraram **no fim** do `SELECT` do painel de propósito: a
+  leitura em Python é posicional, e coluna nova no meio deslocaria todos os
+  índices seguintes.
+- A regra de cada aba virou a função `passaAba`, usada pela lista e pelo
+  contador. Antes a condição estava escrita duas vezes, e bastava mexer numa
+  delas para a aba dizer "3" e mostrar 5 linhas.
 
 ## 12. Riscos
 
