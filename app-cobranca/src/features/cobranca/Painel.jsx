@@ -22,7 +22,7 @@ const ABAS = [
   { k: "RETORNO_ATRASADO", t: "Retorno atrasado" },
   { k: "AGENDADO", t: "Agendados" },
   { k: "EM_ANDAMENTO", t: "Em andamento" },
-  { k: "ACORDO", t: "Com acordo" },
+  { k: "ACORDO", t: "Renegociados" },
   { k: "juridico", t: "Elegíveis ao jurídico" },
   { k: "SEM_DIVIDA", t: "Sem dívida" },
 ];

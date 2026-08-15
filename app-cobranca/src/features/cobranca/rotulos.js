@@ -10,8 +10,13 @@ export const ROTULO_STATUS = {
   AGENDOU: "Agendou retorno",
 };
 
+// ACORDO é RENEGOCIAÇÃO FORMAL, e só. Promessa de pagamento ("pago sexta") NÃO
+// é acordo: ela vive no campo de retorno agendado da chamada, que é o que faz o
+// cliente aparecer como agendado/atrasado no painel. A distinção importa porque
+// ACORDO é o único freio do funil do jurídico (podeJuridico exclui quem tem
+// ult_desfecho = ACORDO) — usá-lo para promessa travaria a régua sem lastro.
 export const ROTULO_DESFECHO = {
-  ACORDO: "acordo",
+  ACORDO: "renegociação formal",
   SEM_ACORDO: "sem acordo",
   EM_ABERTO: "em aberto",
 };
@@ -28,7 +33,7 @@ export const ROTULO_SENTIDO = {
 export const ROTULO_SITUACAO = {
   RETORNO_ATRASADO: "Retorno atrasado",
   AGENDADO: "Retorno agendado",
-  ACORDO: "Acordo fechado",
+  ACORDO: "Renegociado",
   EM_ANDAMENTO: "Em andamento",
   SEM_DIVIDA: "Sem dívida vencida",
 };

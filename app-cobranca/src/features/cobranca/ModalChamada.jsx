@@ -17,9 +17,11 @@ const STATUS = [
   { k: "AGENDOU", t: "Agendou retorno" },
 ];
 
+// "Acordo" sozinho convidava a marcar promessa de pagamento. Ver ROTULO_DESFECHO
+// em rotulos.js: ACORDO é renegociação formal e é o único freio do jurídico.
 const DESFECHOS = [
   { k: "EM_ABERTO", t: "Em aberto" },
-  { k: "ACORDO", t: "Acordo" },
+  { k: "ACORDO", t: "Renegociação formal" },
   { k: "SEM_ACORDO", t: "Sem acordo" },
 ];
 
@@ -439,6 +441,11 @@ export default function ModalChamada({
 
         <div className="modal-sec">
           <h4>Desfecho por título</h4>
+          <p className="hint">
+            "Renegociação formal" é só quando a dívida foi de fato renegociada. Cliente que
+            prometeu pagar continua <b>em aberto</b> — a promessa vai no retorno agendado, aí em
+            cima.
+          </p>
           <table className="tab-modal">
             <tbody>
               {titulos.map((t) => (
