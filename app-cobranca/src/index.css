@@ -1719,6 +1719,14 @@ li.tl-nova {
   flex: 1;
   min-width: 180px;
 }
+/* Linha de formulário com algo pendurado abaixo de um dos campos (os atalhos de
+   data). O align-items:flex-end padrão alinha os RODAPÉS, então a altura extra
+   dos atalhos empurrava o campo de data para cima e ele saía do alinhamento com
+   o campo ao lado. Alinhando pelo topo, os dois rótulos e os dois controles
+   ficam na mesma linha e os atalhos sobram embaixo, que é onde devem estar. */
+.form-linha.topo {
+  align-items: flex-start;
+}
 /* "Já ligou para este cliente hoje": tom de ATENÇÃO, não de erro — ligar duas
    vezes no mesmo dia é legítimo e o operador segue em frente se quiser. */
 .aviso-repetida {

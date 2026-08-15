@@ -373,7 +373,7 @@ export default function ModalChamada({
             </ul>
           </div>
         )}
-        <div className="form-linha">
+        <div className="form-linha topo">
           <div className="campo">
             <label htmlFor="mStatus">Resultado da ligação</label>
             <select id="mStatus" value={status} onChange={(e) => setStatus(e.target.value)}>
