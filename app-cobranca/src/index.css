@@ -1719,6 +1719,49 @@ li.tl-nova {
   flex: 1;
   min-width: 180px;
 }
+/* "Já ligou para este cliente hoje": tom de ATENÇÃO, não de erro — ligar duas
+   vezes no mesmo dia é legítimo e o operador segue em frente se quiser. */
+.aviso-repetida {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+.aviso-repetida ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+}
+.aviso-repetida li {
+  margin-top: 2px;
+}
+/* Atalhos do "Retorno agendado para": preenchem o campo de data, não o
+   substituem — a data escolhida continua à vista para conferência. */
+.atalhos-data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.atalhos-data .atalho {
+  font-family: var(--sans);
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+.atalhos-data .atalho:hover {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+}
+.atalhos-data .atalho.limpar {
+  color: var(--muted);
+}
 .modal-sec h4 {
   font-size: 13px;
   font-weight: 700;

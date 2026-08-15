@@ -637,6 +637,9 @@ export default function Visao360() {
           titulos={modal.titulos}
           sentido={modal.sentido}
           operador={operador}
+          // Histórico já carregado pela 360°: o aviso de "já ligou hoje" sai
+          // daqui em vez de uma consulta nova ao abrir o modal.
+          chamadas={chamadas}
           aoFechar={fecharModal}
         />
       )}

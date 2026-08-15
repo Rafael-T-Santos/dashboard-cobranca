@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LIMITE_ANEXO_MB,
   anexarArquivo,
@@ -21,6 +21,42 @@ const DESFECHOS = [
   { k: "EM_ABERTO", t: "Em aberto" },
   { k: "ACORDO", t: "Acordo" },
   { k: "SEM_ACORDO", t: "Sem acordo" },
+];
+
+// Hora padrão dos atalhos: início do expediente. O operador ajusta se precisar.
+const HORA_PADRAO = 9;
+
+// datetime-local espera "YYYY-MM-DDTHH:mm" no fuso LOCAL. toISOString() devolve
+// UTC e jogaria o horário 3h para trás — "sexta 09:00" viraria "quinta 06:00".
+const paraCampo = (d) => {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(
+    d.getMinutes()
+  )}`;
+};
+
+const emDias = (dias) => {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  d.setHours(HORA_PADRAO, 0, 0, 0);
+  return d;
+};
+
+// Próxima ocorrência do dia da semana (0=dom … 5=sex). O `|| 7` faz "sexta"
+// clicada NUMA SEXTA cair na semana que vem, não hoje de manhã (que já passou).
+const proximoDiaSemana = (alvo) => {
+  const d = emDias(0);
+  d.setDate(d.getDate() + ((alvo - d.getDay() + 7) % 7 || 7));
+  return d;
+};
+
+// Atalhos só PREENCHEM o campo de data — a data continua visível e editável,
+// que é o que o operador confere antes de salvar.
+const ATALHOS = [
+  { t: "Amanhã", calc: () => emDias(1) },
+  { t: "Sexta", calc: () => proximoDiaSemana(5) },
+  { t: "Segunda", calc: () => proximoDiaSemana(1) },
+  { t: "Em 7 dias", calc: () => emDias(7) },
 ];
 
 // Heartbeat: a trava dura 15 min no servidor; renovamos bem antes disso para
@@ -50,7 +86,14 @@ const duracaoMs = (dhInicio, dhExpira) => {
  *   fechar → POST /cancelar          (libera a trava sem gravar nada)
  * Fechar a aba no meio também cancela, via sendBeacon.
  */
-export default function ModalChamada({ codParc, titulos, sentido, operador, aoFechar }) {
+export default function ModalChamada({
+  codParc,
+  titulos,
+  sentido,
+  operador,
+  chamadas = [],
+  aoFechar,
+}) {
   const [fase, setFase] = useState("abrindo"); // abrindo | aberto | conflito | erro | salvando
   const [erro, setErro] = useState("");
   const [conflito, setConflito] = useState([]);
@@ -62,6 +105,18 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
   const [desfechos, setDesfechos] = useState(() =>
     Object.fromEntries(titulos.map((t) => [t.nuFin, "EM_ABERTO"]))
   );
+
+  // Chamadas JÁ REGISTRADAS com este cliente hoje. É só um aviso: ligar duas
+  // vezes no mesmo dia é normal (não atendeu de manhã, tentou à tarde). O que
+  // não dá é registrar a MESMA ligação duas vezes sem perceber — foi o que
+  // aconteceu em produção e empurrou 23 títulos para a 2ª chamada sem nenhuma
+  // segunda ligação ter existido. Quem decide é o operador.
+  const jaHoje = useMemo(() => {
+    const hoje = paraCampo(new Date()).slice(0, 10);
+    return chamadas.filter(
+      (c) => c.situacao === "FINALIZADA" && String(c.dhInicio || "").slice(0, 10) === hoje
+    );
+  }, [chamadas]);
 
   const [anexos, setAnexos] = useState([]);
   const [arquivo, setArquivo] = useState(null);
@@ -294,6 +349,28 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
 
     return (
       <>
+        {jaHoje.length > 0 && (
+          <div className="aviso-repetida">
+            <p>
+              <b>
+                Já {jaHoje.length === 1 ? "houve uma chamada" : `houve ${jaHoje.length} chamadas`}{" "}
+                com este cliente hoje.
+              </b>{" "}
+              Se você ligou de novo, siga normalmente — o aviso é só para não registrar duas vezes
+              a mesma ligação
+              {sentido === "PROATIVA" ? ", o que avançaria a régua dos títulos à toa" : ""}.
+            </p>
+            <ul>
+              {jaHoje.map((c) => (
+                <li key={c.codChamada}>
+                  <b>{String(c.dhInicio).slice(11, 16)}</b> — {c.nomeUsu || `usuário ${c.codUsu}`}
+                  {c.status ? ` · ${STATUS.find((s) => s.k === c.status)?.t || c.status}` : ""}
+                  {c.resumo ? ` · ${c.resumo.slice(0, 80)}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="form-linha">
           <div className="campo">
             <label htmlFor="mStatus">Resultado da ligação</label>
@@ -305,18 +382,49 @@ export default function ModalChamada({ codParc, titulos, sentido, operador, aoFe
               ))}
             </select>
           </div>
-          {status === "AGENDOU" && (
-            <div className="campo">
-              <label htmlFor="mAgenda">Retorno agendado para</label>
-              <input
-                id="mAgenda"
-                type="datetime-local"
-                value={dhAgenda}
-                onChange={(e) => setDhAgenda(e.target.value)}
-              />
+          {/* O campo aparece em QUALQUER status. Antes só existia com AGENDOU, e
+              quem marcava "Atendeu" — o caso normal de cliente que promete pagar —
+              nunca o via: a data ia parar no texto do resumo, onde o painel da
+              gerência não enxerga. Em caixa postal/recusa ele vale como "tentar de
+              novo em". Só continua OBRIGATÓRIO no AGENDOU. */}
+          <div className="campo">
+            <label htmlFor="mAgenda">
+              {status === "CAIXA_POSTAL" || status === "RECUSOU"
+                ? "Tentar de novo em"
+                : "Retorno agendado para"}
+              {status === "AGENDOU" && <span className="req"> *</span>}
+            </label>
+            <input
+              id="mAgenda"
+              type="datetime-local"
+              value={dhAgenda}
+              onChange={(e) => setDhAgenda(e.target.value)}
+            />
+            <div className="atalhos-data">
+              {ATALHOS.map((a) => (
+                <button
+                  key={a.t}
+                  type="button"
+                  className="atalho"
+                  onClick={() => setDhAgenda(paraCampo(a.calc()))}
+                >
+                  {a.t}
+                </button>
+              ))}
+              {dhAgenda && (
+                <button type="button" className="atalho limpar" onClick={() => setDhAgenda("")}>
+                  Limpar
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
+        {!dhAgenda && (
+          <p className="hint">
+            Combinou uma data com o cliente? Preencha aqui em vez de só escrever no resumo —
+            é esta data que faz o cliente aparecer como retorno atrasado no painel.
+          </p>
+        )}
 
         <div className="campo">
           <label htmlFor="mResumo">Resumo da conversa</label>
