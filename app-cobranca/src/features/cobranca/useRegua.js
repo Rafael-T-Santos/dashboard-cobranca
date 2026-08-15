@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getChamadas, getLocks, getRegua } from "../../api/cobranca";
+import {
+  getChamadas,
+  getLocks,
+  getPagamentosInformados,
+  getRegua,
+} from "../../api/cobranca";
 
 // De quanto em quanto tempo reconsultamos as travas. Trava é o único dado da
 // tela que muda por ação de OUTRA pessoa: se o colega abriu o modal agora, o
 // checkbox daqui precisa desabilitar sozinho, sem F5.
 const INTERVALO_TRAVAS = 30_000;
 
-function indexar(regua, travas) {
+// `pagtos` só é passado pela carteira. Na Visão 360° o marcador já vem na
+// própria linha do título, pelo /extrato — buscá-lo de novo aqui seria uma
+// consulta a mais para o mesmo dado.
+function indexar(regua, travas, pagtos = []) {
   const mapa = new Map();
   for (const r of regua) {
     mapa.set(r.nufin, {
@@ -18,6 +26,9 @@ function indexar(regua, travas) {
   }
   for (const t of travas) {
     mapa.set(t.nufin, { ...(mapa.get(t.nufin) || {}), trava: t });
+  }
+  for (const p of pagtos) {
+    mapa.set(p.nufin, { ...(mapa.get(p.nufin) || {}), pagamentoInformado: p });
   }
   return mapa;
 }
@@ -33,21 +44,23 @@ function indexar(regua, travas) {
 export function useReguaCarteira() {
   const [regua, setRegua] = useState([]);
   const [travas, setTravas] = useState([]);
+  const [pagtos, setPagtos] = useState([]);
   const ultimoRef = useRef("");
 
   const recarregar = useCallback(
     () =>
-      Promise.all([getRegua(), getLocks()])
-        .then(([r, t]) => {
+      Promise.all([getRegua(), getLocks(), getPagamentosInformados()])
+        .then(([r, t, p]) => {
           // A tabela de títulos vencidos tem milhares de linhas e é memoizada.
           // Trocar o estado a cada 30 s por um array novo — ainda que idêntico —
           // invalidaria o memo e reconstruiria a tabela inteira sem necessidade.
           // Comparar o JSON é barato perto disso: a régua é pequena.
-          const assinatura = JSON.stringify([r, t]);
+          const assinatura = JSON.stringify([r, t, p]);
           if (assinatura === ultimoRef.current) return;
           ultimoRef.current = assinatura;
           setRegua(r);
           setTravas(t);
+          setPagtos(p);
         })
         .catch(() => {
           // Silencioso de propósito: os badges são informação acessória. Uma
@@ -62,7 +75,7 @@ export function useReguaCarteira() {
     return () => clearInterval(id);
   }, [recarregar]);
 
-  return useMemo(() => indexar(regua, travas), [regua, travas]);
+  return useMemo(() => indexar(regua, travas, pagtos), [regua, travas, pagtos]);
 }
 
 /**

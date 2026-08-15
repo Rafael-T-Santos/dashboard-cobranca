@@ -110,6 +110,15 @@ export function registrarPagamentoInformado({ codParc, nufins, obs }) {
   return apiPost("/api/cobranca/pagamento-informado", { codParc, nufins, obs });
 }
 
+/**
+ * Títulos com pagamento informado. Sem codParc devolve todos — são poucos, e a
+ * lista de títulos vencidos cruza em memória (mesmo padrão do getLocks).
+ */
+export function getPagamentosInformados(codParc) {
+  const q = codParc ? `?codParc=${codParc}` : "";
+  return apiGet(`/api/cobranca/pagamentos-informados${q}`).then((r) => r.dados ?? []);
+}
+
 /** Histórico de chamadas do cliente (com itens e anexos). */
 export function getChamadas(codParc) {
   return apiGet(`/api/cobranca/chamadas?codParc=${codParc}`).then(

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { fmtBRL, fmtNum, valorTitulo } from "../../lib/format";
+import { fmtBRL, fmtData, fmtNum, valorTitulo } from "../../lib/format";
 import { normalize } from "../../lib/text";
 import { VAZIO, valorDe, chaveDe, rotuloDe, passa } from "../../lib/tableFilter";
 import Combobox from "../../components/Combobox.jsx";
@@ -21,8 +21,14 @@ import { useReguaCarteira } from "./useRegua";
 // Título em chamada AGORA aparece como "Em chamada" mesmo que já tenha régua:
 // entre "está sendo trabalhado neste instante" e "já levou 2 ligações", o
 // primeiro é o que muda a decisão de quem está olhando a lista.
+//
+// "Pagamento informado" vem logo depois, pela mesma lógica: quem varre esta
+// lista está escolhendo para quem ligar, e "o cliente avisou que pagou" muda
+// essa decisão mais do que o número de ligações já feitas. Só perde para a
+// trava, que significa que alguém está com o título neste instante.
 function rotuloCobranca(info) {
   if (info.trava) return "Em chamada";
+  if (info.pagamentoInformado) return "Pagamento informado";
   return info.ordem > 0 ? rotuloOrdem(info.ordem) : null;
 }
 
@@ -462,6 +468,21 @@ function Celula({ col, row }) {
     if (!info) return <td className="col-cobr"><span className="vazio">—</span></td>;
     return (
       <td className="col-cobr">
+        {info.pagamentoInformado && (
+          <span
+            className="badge pagto"
+            title={
+              `Informado por ${
+                info.pagamentoInformado.nomeUsu ||
+                `usuário ${info.pagamentoInformado.codUsu}`
+              } em ${dataHora(info.pagamentoInformado.dhInformado)}` +
+              " · a baixa é feita no Sankhya pelo financeiro"
+            }
+          >
+            Pagamento informado{" "}
+            {fmtData(String(info.pagamentoInformado.dhInformado).slice(0, 10))}
+          </span>
+        )}
         {info.trava && (
           <span
             className="badge trava"
