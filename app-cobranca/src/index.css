@@ -2079,3 +2079,96 @@ li.tl-nova {
 .chip-filtro:hover {
   filter: brightness(0.97);
 }
+.filtros-chip h3 {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bloco-carteira {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.acoes-imprimir {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Impressão ──────────────────────────────────────────────────────────────
+   Sai no papel só o bloco de indicadores + gráficos; todo o resto é
+   `.nao-imprime`. O app vive dentro de um shell de 100vh com overflow hidden,
+   e sem desmontar essa caixa o navegador imprime uma página em branco. */
+.so-impressao {
+  display: none;
+}
+@media print {
+  .shell,
+  .content {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .area {
+    overflow: visible !important;
+    height: auto;
+  }
+  .sidebar,
+  .page-head,
+  .nao-imprime {
+    display: none !important;
+  }
+  .pagina {
+    padding: 0;
+    gap: 10px;
+  }
+  .so-impressao {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 12px;
+    border-bottom: 1px solid #999;
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+  }
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+  .kpis {
+    margin-top: 0;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .graficos {
+    grid-template-columns: 1fr;
+  }
+  /* Sem isto o navegador descarta os fundos e as barras saem VAZIAS — que é
+     justamente o que se quer imprimir. */
+  .barra-fill,
+  .barra-trilho,
+  .kpi {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Se a máquina estiver no tema escuro, o navegador leva o tema para o papel:
+     fundo preto e barras claras gastando tinta. No papel a paleta é sempre a
+     clara. */
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f1f4fb;
+    --border: #ccd3e2;
+    --text: #101425;
+    --muted: #4a5570;
+    --accent: #2255d4;
+    --aging-1: #6a90e0;
+    --aging-2: #4f78cf;
+    --aging-3: #3a5fb4;
+    --aging-4: #2a4691;
+    --aging-5: #1c3268;
+  }
+  @page {
+    margin: 12mm;
+  }
+}

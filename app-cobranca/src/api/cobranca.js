@@ -156,12 +156,17 @@ export function getVendedoresResumo() {
 }
 
 /**
- * Carteira vencida de UM vendedor, agrupada por cliente.
+ * Carteira vencida agrupada por cliente. Sem `codVend`, vem a carteira INTEIRA
+ * (o consolidado "todos os vendedores").
+ *
  * Devolve { vendedor, clientes } — o bloco `vendedor` traz os totais já somados
  * das mesmas linhas de `clientes`, para o cabeçalho não discordar da tabela.
+ * O consolidado vem do servidor de propósito: somar os `qtdClientes` do
+ * /vendedores-resumo contaria duas vezes quem compra com dois vendedores.
  */
 export function getVendedor360(codVend) {
-  return apiGet(`/api/cobranca/vendedor-360?codVend=${codVend}`).then((r) => ({
+  const q = codVend == null || codVend === "" ? "" : `?codVend=${codVend}`;
+  return apiGet(`/api/cobranca/vendedor-360${q}`).then((r) => ({
     vendedor: r.vendedor ?? null,
     clientes: r.dados ?? [],
   }));

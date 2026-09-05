@@ -58,7 +58,13 @@ faixa nova.
 
 Ordenado por `valorTotal DESC`.
 
-### 3.2 `GET /api/cobranca/vendedor-360?codVend=<int>` (obrigatório, 400 sem ele) — detalhe
+### 3.2 `GET /api/cobranca/vendedor-360[?codVend=<int>]` — detalhe
+
+> **Revisão de 2026-09-05:** `codVend` nasceu obrigatório e virou **opcional**. Sem ele vem a
+> carteira inteira, que é o consolidado "todos os vendedores" da tela de entrada. Esse
+> consolidado **não** pode ser a soma das linhas do `/vendedores-resumo` no navegador: quem
+> compra com dois vendedores tem título nos dois, e somar os `qtdClientes` contaria o mesmo
+> cliente duas vezes. Aqui a base é o cliente, e cada um aparece uma vez só.
 
 Mesmo molde do `SQL_PAINEL_ENVELOPE` (`cobranca.py:2332`), com uma mudança de fundo na CTE
 `CARTEIRA`: **sem** o `AND CODPARC IN (SELECT CODPARC FROM TRABALHADOS)`. Reaproveitar
@@ -102,9 +108,14 @@ A agregação é feita **no Oracle**, nos dois endpoints — nunca somar em Java
 Arquivo novo `src/features/cobranca/Vendedor360.jsx`. Cliente da API ganha `getVendedoresResumo()`
 e `getVendedor360(codVend)` em `api/cobranca.js` (mesmo padrão de `getPainel()`).
 
-**Estado de entrada** (sem `?codVend=` na URL): tabela de `vendedores-resumo`, ordenada por
-valor, linha clicável — clique escreve `?codVend=` na URL (não navega de rota, só troca query
-string, como o Painel faz ao linkar pra 360°).
+**Estado de entrada** (sem `?codVend=` na URL): o **consolidado de todos os vendedores** (o
+mesmo bloco de indicadores e gráficos do detalhe, vindo do `/vendedor-360` sem `codVend`) e,
+abaixo, a tabela de `vendedores-resumo` ordenada por valor, com **campo de busca** e linha
+clicável — clique escreve `?codVend=` na URL (não navega de rota, só troca query string, como
+o Painel faz ao linkar pra 360°). As duas consultas saem juntas e renderizam separado: a lista
+é leve e aparece primeiro; o consolidado varre a carteira toda e chega depois, sem segurar a
+tela. Nesse estado, clicar numa faixa do aging filtra a **tabela de vendedores** (quem tem
+título naquela faixa) — a mesma interação, aplicada à lista que está na tela.
 
 **Estado de detalhe** (`?codVend=` presente):
 
@@ -143,6 +154,24 @@ de `rotulos.js`, formatação de `lib/format.js` e `lib/text.js`.
   #2a4691 #1c3268` (3,1:1 → 12,3:1); no escuro: `#3f63b0 #5482d8 #7aa4ef #a9c8fb #d3e2ff`
   (3,0:1 → 13,4:1).
 - Cor nunca é a única informação: toda barra tem rótulo e valor escritos ao lado.
+
+### 4.2 Impressão (pedido de 2026-09-05)
+
+Botão "Imprimir os gráficos" → `window.print()` + uma folha `@media print`. Sem biblioteca:
+o próprio navegador já exporta PDF, e um `html2canvas` da vida só entregaria uma imagem pior.
+
+O que a folha de impressão precisa resolver (todos já mordidos):
+
+- o app vive num shell de `100vh` com `overflow: hidden` e a rolagem é do `.area` — sem
+  desmontar essa caixa, o navegador imprime **uma página em branco**;
+- o navegador **descarta cores de fundo** por padrão, e as barras sairiam vazias — que é
+  justamente o que se quer imprimir. Resolve `print-color-adjust: exact`;
+- se a máquina estiver no tema escuro, o tema vai para o papel (fundo preto gastando tinta).
+  No `@media print` a paleta é redeclarada sempre na versão clara;
+- na tela o cabeçalho da página diz de quem é a carteira, mas ele não é impresso — por isso
+  existe um cabeçalho `.so-impressao` com o nome do vendedor e a data/hora da impressão.
+
+Sai no papel só o bloco de indicadores + gráficos; tabela, filtros e busca são `.nao-imprime`.
 
 **Sidebar** (`Layout.jsx`): item novo "Visão por Vendedor", ao lado de "Painel de Cobrança".
 
