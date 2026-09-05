@@ -2117,9 +2117,38 @@ li.tl-nova {
   .nao-imprime {
     display: none !important;
   }
+  /* A escala vem embutida para não depender de ninguém lembrar de mexer no
+     diálogo de impressão. 90% foi o valor que o usuário achou na mão; como a
+     altura desta folha é previsível (sempre 6 indicadores, 5 faixas e no máximo
+     9 barras de devedores), com ela mais o aperto abaixo sobra margem e a folha
+     é sempre uma só — em A4 ou Carta.
+     `zoom` e não `transform: scale()`: o transform não reflui, ele desenha por
+     cima e o navegador continua paginando pelo tamanho original — voltaria a
+     sair a segunda página em branco. */
   .pagina {
     padding: 0;
-    gap: 10px;
+    gap: 8px;
+    zoom: 0.9;
+  }
+  /* Aperto do bloco impresso: na tela o espaçamento é para leitura de longe, no
+     papel ele só gasta folha. */
+  .kpi {
+    padding: 9px 11px;
+  }
+  .kpi-value {
+    font-size: 17px;
+  }
+  .grafico {
+    padding: 10px 12px 12px;
+  }
+  .grafico-topo {
+    margin-bottom: 8px;
+  }
+  .barras {
+    gap: 5px;
+  }
+  .barra-linha {
+    padding: 2px 4px;
   }
   .so-impressao {
     display: flex;
