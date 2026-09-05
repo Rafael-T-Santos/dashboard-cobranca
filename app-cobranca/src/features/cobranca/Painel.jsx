@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getPainel } from "../../api/cobranca";
 import { fmtBRL, fmtNum } from "../../lib/format";
-import { fmtDoc } from "../../lib/text";
-import { COR_SITUACAO, ROTULO_SITUACAO, dataHora, rotuloOrdem } from "./rotulos";
+import LinhaCliente, { CabecalhoCliente } from "./LinhaCliente";
 
 /**
  * Painel da gerência — uma linha por cliente JÁ TRABALHADO.
@@ -43,7 +41,6 @@ const passaAba = (c, k) => {
 };
 
 export default function Painel() {
-  const navegar = useNavigate();
   const [clientes, setClientes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -201,101 +198,11 @@ export default function Painel() {
                   <div className="table-wrap">
                     <table>
                       <thead>
-                        <tr>
-                          <th>Cliente</th>
-                          <th>Situação</th>
-                          <th>Estágio</th>
-                          <th className="num">Títulos</th>
-                          <th className="num">Em aberto</th>
-                          <th className="num">Maior atraso</th>
-                          <th>Último contato</th>
-                          <th>Próximo retorno</th>
-                        </tr>
+                        <CabecalhoCliente />
                       </thead>
                       <tbody>
                         {ordenados.map((c) => (
-                          <tr key={c.codParc}>
-                            <td>
-                              <button
-                                type="button"
-                                className="link-tit"
-                                onClick={() => navegar(`/visao-360?codParc=${c.codParc}`)}
-                                title="Abrir a Visão 360° deste cliente"
-                              >
-                                {c.nomeParc}
-                              </button>
-                              <div className="hint">
-                                #{c.codParc}
-                                {c.cgcCpf ? ` · ${fmtDoc(c.cgcCpf)}` : ""}
-                              </div>
-                            </td>
-                            <td>
-                              <span className={"badge sit " + (COR_SITUACAO[c.situacao] || "")}>
-                                {ROTULO_SITUACAO[c.situacao] || c.situacao}
-                              </span>
-                              {c.emChamadaAgora && (
-                                <span className="badge trava" title="Alguém está com este cliente na linha agora">
-                                  🔒 em chamada
-                                </span>
-                              )}
-                              {c.titulosPagamentoInformado > 0 && (
-                                <span
-                                  className="badge pagto"
-                                  title={
-                                    `${c.titulosPagamentoInformado} título(s) em que o cliente ` +
-                                    `avisou que pagou, o último em ${dataHora(
-                                      c.pagamentoInformadoEm
-                                    )}. A baixa é feita no Sankhya pelo financeiro — quando ` +
-                                    "sair, o título deixa a carteira e este aviso some sozinho."
-                                  }
-                                >
-                                  informou pagamento ({c.titulosPagamentoInformado})
-                                </span>
-                              )}
-                            </td>
-                            <td>
-                              {c.estagio > 0 ? (
-                                <span className={"badge regua" + (c.podeJuridico ? " juri" : "")}>
-                                  {rotuloOrdem(c.estagio)}
-                                </span>
-                              ) : (
-                                <span className="hint">só chamada receptiva</span>
-                              )}
-                              {/* O número único ordena e filtra; a quebra evita que
-                                  ele minta, porque os títulos de um mesmo cliente
-                                  podem estar em estágios diferentes. */}
-                              <div className="hint">{quebra(c)}</div>
-                            </td>
-                            <td className="num">{c.qtdTitulos}</td>
-                            <td className="num">{fmtBRL(c.valorTotal)}</td>
-                            <td className="num">
-                              {c.maiorAtrasoDias > 0 ? `${fmtNum(c.maiorAtrasoDias)} dias` : "—"}
-                            </td>
-                            <td>
-                              {c.ultimoContatoEm ? (
-                                <>
-                                  {dataHora(c.ultimoContatoEm)}
-                                  <div className="hint">{c.ultimoContatoPor || "—"}</div>
-                                </>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td>
-                              {c.proximoRetornoEm ? (
-                                <>
-                                  {dataHora(c.proximoRetornoEm)}
-                                  <div className="hint">{c.proximoRetornoPor || "—"}</div>
-                                </>
-                              ) : c.retornoAtrasadoDe ? (
-                                <span className="atrasado">
-                                  venceu {dataHora(c.retornoAtrasadoDe)}
-                                </span>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                          </tr>
+                          <LinhaCliente key={c.codParc} c={c} />
                         ))}
                       </tbody>
                     </table>
@@ -308,14 +215,4 @@ export default function Painel() {
       </main>
     </>
   );
-}
-
-/** "2 sem contato · 1 na 1ª · 1 na 3ª+" — a composição por trás do estágio. */
-function quebra(c) {
-  const partes = [];
-  if (c.titulosSemContato) partes.push(`${c.titulosSemContato} sem contato`);
-  if (c.porOrdem["1"]) partes.push(`${c.porOrdem["1"]} na 1ª`);
-  if (c.porOrdem["2"]) partes.push(`${c.porOrdem["2"]} na 2ª`);
-  if (c.porOrdem["3"]) partes.push(`${c.porOrdem["3"]} na 3ª+`);
-  return partes.join(" · ") || "sem título vencido";
 }

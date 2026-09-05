@@ -150,6 +150,23 @@ export function getRegua(codParc) {
  * Quem nunca recebeu chamada não vem aqui — para a dívida crua existe a tela
  * de títulos. Cliente trabalhado que quitou continua vindo, com valor zero.
  */
+/** Uma linha por vendedor sobre a carteira vencida — tela de entrada da /vendedor-360. */
+export function getVendedoresResumo() {
+  return apiGet("/api/cobranca/vendedores-resumo").then((r) => r.dados ?? []);
+}
+
+/**
+ * Carteira vencida de UM vendedor, agrupada por cliente.
+ * Devolve { vendedor, clientes } — o bloco `vendedor` traz os totais já somados
+ * das mesmas linhas de `clientes`, para o cabeçalho não discordar da tabela.
+ */
+export function getVendedor360(codVend) {
+  return apiGet(`/api/cobranca/vendedor-360?codVend=${codVend}`).then((r) => ({
+    vendedor: r.vendedor ?? null,
+    clientes: r.dados ?? [],
+  }));
+}
+
 export function getPainel() {
   return apiGet("/api/cobranca/painel").then((r) => r.dados ?? []);
 }

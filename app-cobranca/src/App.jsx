@@ -3,6 +3,7 @@ import Layout from "./components/Layout.jsx";
 import TitulosVencidos from "./features/cobranca/TitulosVencidos.jsx";
 import Visao360 from "./features/cobranca/Visao360.jsx";
 import PainelCobranca from "./features/cobranca/Painel.jsx";
+import Vendedor360 from "./features/cobranca/Vendedor360.jsx";
 import EmBreve from "./components/EmBreve.jsx";
 import { OpcoesProvider } from "./features/cobranca/OpcoesProvider.jsx";
 import { TitulosProvider } from "./features/cobranca/TitulosProvider.jsx";
@@ -32,6 +33,7 @@ function Painel() {
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/titulos-vencidos" replace />} />
             <Route path="/painel" element={<PainelCobranca />} />
+            <Route path="/vendedor-360" element={<Vendedor360 />} />
             <Route path="/titulos-vencidos" element={<TitulosVencidos />} />
             <Route path="/visao-360" element={<Visao360 />} />
             <Route path="/regua" element={<EmBreve titulo="Régua de Cobrança" />} />

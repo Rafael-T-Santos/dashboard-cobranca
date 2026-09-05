@@ -17,6 +17,18 @@
   --sidebar-text: #b8c2de;
   --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Rampa das faixas de atraso (gráfico da Visão por Vendedor). UMA cor,
+     variando só em luminosidade: faixa de atraso é escala ordenada, e cores
+     diferentes sugeririam categorias independentes. Do mais recente (claro) ao
+     mais velho (escuro). Os 5 passos foram MEDIDOS: todos acima de 3:1 de
+     contraste contra o fundo do cartão, e monotônicos — a régua está em
+     docs/VENDEDOR-360.md. */
+  --aging-1: #6a90e0;
+  --aging-2: #4f78cf;
+  --aging-3: #3a5fb4;
+  --aging-4: #2a4691;
+  --aging-5: #1c3268;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,6 +49,16 @@
     --ok-bg: #0c2a20;
     --sidebar: #0a0d17;
     --sidebar-text: #8b97bb;
+
+    /* No escuro a rampa NÃO é a clara invertida: ela é remedida contra o fundo
+       escuro do cartão. O sentido é o mesmo (mais velho = mais destaque), mas
+       aqui destaque é ficar mais CLARO, e não mais escuro — no escuro, a cor
+       escura é a que some. */
+    --aging-1: #3f63b0;
+    --aging-2: #5482d8;
+    --aging-3: #7aa4ef;
+    --aging-4: #a9c8fb;
+    --aging-5: #d3e2ff;
   }
 }
 
@@ -1934,4 +1956,126 @@ li.tl-nova {
 }
 .painel-tab .badge + .badge {
   margin-left: 5px;
+}
+
+/* ── Visão 360° por Vendedor ────────────────────────────────────────────────
+   Ver docs/VENDEDOR-360.md. A rampa de cor das faixas está no :root (e é
+   remedida no bloco de modo escuro). */
+
+/* "Sem contato" é âmbar, não vermelho: é trabalho que ainda não começou, não
+   promessa quebrada — o vermelho continua exclusivo do retorno atrasado. */
+.sit-ambar {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.kpi-value.warn {
+  color: var(--warn);
+}
+
+.graficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+.grafico {
+  padding: 14px 16px 16px;
+}
+.grafico-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.grafico-topo h3 {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.barras {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* A linha inteira é o alvo do clique — bem maior que a barra, que é fina de
+   propósito (marca fina, muito espaço em branco). */
+.barra-linha {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.9fr) minmax(80px, 2fr) minmax(120px, auto);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  font-family: var(--sans);
+  text-align: left;
+  color: var(--text);
+}
+.barra-linha.clicavel {
+  cursor: pointer;
+}
+.barra-linha.clicavel:hover {
+  background: var(--surface-2);
+}
+.barra-linha.on {
+  border-color: var(--accent);
+  background: var(--accent-faint);
+}
+.barra-rot {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barra-trilho {
+  display: block;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.barra-fill {
+  display: block;
+  height: 100%;
+  /* Ponta arredondada só do lado do dado; o outro fica preso à linha de base. */
+  border-radius: 0 4px 4px 0;
+}
+.barra-val {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+/* Rótulo direto em toda barra: com 5 a 9 barras isso lê melhor que tooltip, e
+   nada depende de passar o mouse. */
+.barra-qtd {
+  display: block;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.filtros-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip-filtro {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent-faint);
+  color: var(--accent);
+  cursor: pointer;
+}
+.chip-filtro:hover {
+  filter: brightness(0.97);
 }

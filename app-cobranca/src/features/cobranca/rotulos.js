@@ -37,7 +37,12 @@ export const ROTULO_SENTIDO = {
 // e sai nesta ordem de precedência — ver docs/PAINEL-GERENTE.md §3.
 // "Elegível ao jurídico" NÃO está aqui de propósito: é sinalizador à parte,
 // porque um cliente pode estar agendado E na 3ª chamada ao mesmo tempo.
+// SEM_CONTATO só aparece na Visão por Vendedor: lá a base é a carteira, então
+// entra cliente que ninguém ligou ainda — e revelar esse pessoal é o motivo
+// daquela tela existir. O painel nunca produz esse valor (ver
+// docs/VENDEDOR-360.md §2), então a entrada aqui não muda nada nele.
 export const ROTULO_SITUACAO = {
+  SEM_CONTATO: "Sem contato",
   RETORNO_ATRASADO: "Retorno atrasado",
   AGENDADO: "Retorno agendado",
   ACORDO: "Renegociado",
@@ -46,14 +51,26 @@ export const ROTULO_SITUACAO = {
 };
 
 // Cor de cada situação. O vermelho é só do retorno atrasado: é o único estado
-// que significa que alguém prometeu voltar e não voltou.
+// que significa que alguém prometeu voltar e não voltou. "Sem contato" é âmbar,
+// não vermelho: é trabalho que ainda não começou, não promessa quebrada.
 export const COR_SITUACAO = {
+  SEM_CONTATO: "sit-ambar",
   RETORNO_ATRASADO: "sit-vermelho",
   AGENDADO: "sit-azul",
   ACORDO: "sit-verde",
   EM_ANDAMENTO: "sit-neutro",
   SEM_DIVIDA: "sit-cinza",
 };
+
+// Faixas de atraso, na MESMA ordem e com as mesmas quebras do SQL da API
+// (cobranca.py, SQL_AGING). A chave vem da resposta; aqui é só o rótulo.
+export const FAIXAS_ATRASO = [
+  { chave: "d1a30", rotulo: "1 a 30 dias" },
+  { chave: "d31a90", rotulo: "31 a 90 dias" },
+  { chave: "d91a180", rotulo: "91 a 180 dias" },
+  { chave: "d181a365", rotulo: "181 a 365 dias" },
+  { chave: "dMais365", rotulo: "mais de 1 ano" },
+];
 
 const ORDINAL = ["", "1ª", "2ª", "3ª", "4ª", "5ª"];
 
