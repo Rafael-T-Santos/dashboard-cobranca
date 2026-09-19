@@ -257,6 +257,9 @@ export default function TitulosVencidos() {
             <label htmlFor="fVend">Vendedor</label>
             <select id="fVend" value={filtros.codVend} onChange={set("codVend")}>
               <option value="">Todos</option>
+              {/* 0 = título sem vendedor no financeiro nem vendedor interno na
+                  nota — a mesma linha "SEM VENDEDOR" da Visão por Vendedor. */}
+              <option value="0">SEM VENDEDOR</option>
               {vendedores.map((v) => (
                 <option key={v.codVend} value={v.codVend}>
                   {v.apelido || `Vendedor ${v.codVend}`}
@@ -504,6 +507,16 @@ function Celula({ col, row }) {
             {rotuloOrdem(info.ordem)}
           </span>
         )}
+      </td>
+    );
+  }
+
+  // Vendedor herdado da nota (TGFCAB.AD_CODVENDINT): no Sankhya o título aparece
+  // sem vendedor, então a tela avisa de onde o nome saiu.
+  if (col.k === "vendedor" && row.origemVendedor === "INTERNO") {
+    return (
+      <td title="Título sem vendedor no financeiro — vendedor interno da nota">
+        {val || "—"} <span className="hint">(interno)</span>
       </td>
     );
   }
