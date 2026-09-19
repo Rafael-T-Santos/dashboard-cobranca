@@ -460,6 +460,19 @@ export default function TitulosVencidos() {
   );
 }
 
+// origemVendedor da API (/receitas-vencidas) quando o vendedor NÃO está no
+// título. "TITULO" e null não levam marcação.
+const VENDEDOR_HERDADO = {
+  INTERNO: {
+    rotulo: "interno",
+    dica: "Título sem vendedor no financeiro — vendedor interno da nota",
+  },
+  RENEGOCIACAO: {
+    rotulo: "renegociação",
+    dica: "Título de renegociação sem vendedor — vendedor comum aos títulos renegociados",
+  },
+};
+
 function Celula({ col, row }) {
   const val = valorDe(col, row);
 
@@ -511,12 +524,13 @@ function Celula({ col, row }) {
     );
   }
 
-  // Vendedor herdado da nota (TGFCAB.AD_CODVENDINT): no Sankhya o título aparece
-  // sem vendedor, então a tela avisa de onde o nome saiu.
-  if (col.k === "vendedor" && row.origemVendedor === "INTERNO") {
+  // Vendedor herdado (não está no título): no Sankhya o título aparece sem
+  // vendedor, então a tela avisa de onde o nome saiu.
+  const herdado = col.k === "vendedor" && VENDEDOR_HERDADO[row.origemVendedor];
+  if (herdado) {
     return (
-      <td title="Título sem vendedor no financeiro — vendedor interno da nota">
-        {val || "—"} <span className="hint">(interno)</span>
+      <td title={herdado.dica}>
+        {val || "—"} <span className="hint">({herdado.rotulo})</span>
       </td>
     );
   }
